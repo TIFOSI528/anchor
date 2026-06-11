@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, package & upload
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        run: swift test
+
+      - name: Package .app + dmg
+        env:
+          ANCHOR_VERSION: ${{ github.ref_name }}
+          # 可选 secrets；缺省时产物为 ad-hoc 签名的开发版 dmg。
+          ANCHOR_SIGN_IDENTITY: ${{ secrets.ANCHOR_SIGN_IDENTITY }}
+          ANCHOR_APPCAST_URL: ${{ vars.ANCHOR_APPCAST_URL }}
+          ANCHOR_SPARKLE_PUBLIC_KEY: ${{ vars.ANCHOR_SPARKLE_PUBLIC_KEY }}
+        run: |
+          export ANCHOR_VERSION="${ANCHOR_VERSION#v}"
+          zsh scripts/package-app.sh
+
+      # 公证需要 Developer ID 证书导入 + Apple 凭证，本 workflow 不强制；
+      # secrets 就绪后把 ANCHOR_NOTARIZE=1 接进上一步即可。
+
+      - name: Upload dmg to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: output/*.dmg
+          generate_release_notes: true

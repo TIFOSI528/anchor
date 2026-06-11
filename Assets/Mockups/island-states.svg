@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300" font-family="-apple-system, 'SF Pro', sans-serif">
+  <!-- 灵动岛五形态草图（dynamic-island-spec §三）。demo 动效草图：idle / drift / red 三态为主。 -->
+  <rect width="560" height="300" fill="#f8fafc"/>
+  <text x="20" y="30" font-size="14" font-weight="600" fill="#0f172a">灵动岛形态（200ms ease-out 互相过渡）</text>
+
+  <!-- 形态 0：休眠 -->
+  <text x="20" y="62" font-size="11" fill="#64748b">形态 0 · 休眠（绿点 2s 呼吸）</text>
+  <rect x="20" y="70" width="40" height="14" rx="7" fill="#0a0a0a"/>
+  <circle cx="40" cy="77" r="3" fill="#22c55e">
+    <animate attributeName="opacity" values="0.35;1;0.35" dur="2s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 形态 1：刚漂移 -->
+  <text x="20" y="122" font-size="11" fill="#64748b">形态 1 · 漂移 0–60s（圆环顺时针填充）</text>
+  <rect x="20" y="130" width="70" height="18" rx="9" fill="#0a0a0a"/>
+  <circle cx="34" cy="139" r="5.5" fill="none" stroke="#f59e0b33" stroke-width="2.5"/>
+  <circle cx="34" cy="139" r="5.5" fill="none" stroke="#f59e0b" stroke-width="2.5"
+          stroke-dasharray="34.6" stroke-dashoffset="20" stroke-linecap="round" transform="rotate(-90 34 139)">
+    <animate attributeName="stroke-dashoffset" values="34.6;0" dur="30s" repeatCount="indefinite"/>
+  </circle>
+  <text x="46" y="143" font-size="10" font-weight="600" fill="#ffffff" font-family="ui-monospace, monospace">0:30</text>
+
+  <!-- 形态 2：漂移加深 -->
+  <text x="20" y="192" font-size="11" fill="#64748b">形态 2 · 漂移 1–3min（橙色 + 拉回按钮）</text>
+  <rect x="20" y="200" width="110" height="22" rx="11" fill="#d97706"/>
+  <text x="32" y="214" font-size="10" font-weight="600" fill="#ffffff">1:24 ↩ 回到 VS Code</text>
+
+  <!-- 形态 3：红区 -->
+  <text x="300" y="62" font-size="11" fill="#64748b">形态 3 · 红区（进入时触感反馈一次）</text>
+  <rect x="300" y="70" width="140" height="24" rx="12" fill="#dc2626"/>
+  <text x="314" y="85" font-size="10" font-weight="600" fill="#ffffff">立即拉回 · 已离开 12 秒</text>
+
+  <!-- 形态 4：合法摸鱼 -->
+  <text x="300" y="122" font-size="11" fill="#64748b">形态 4 · 合法摸鱼（圆环逆时针递减）</text>
+  <rect x="300" y="130" width="70" height="20" rx="10" fill="#f59e0b"/>
+  <circle cx="314" cy="140" r="5.5" fill="none" stroke="#ffffff44" stroke-width="2.5"/>
+  <circle cx="314" cy="140" r="5.5" fill="none" stroke="#ffffff" stroke-width="2.5"
+          stroke-dasharray="34.6" stroke-dashoffset="8" stroke-linecap="round" transform="rotate(-90 314 140)">
+    <animate attributeName="stroke-dashoffset" values="0;34.6" dur="300s" repeatCount="indefinite"/>
+  </circle>
+  <text x="326" y="144" font-size="10" font-weight="600" fill="#ffffff" font-family="ui-monospace, monospace">5:00</text>
+
+  <!-- 手势注记 -->
+  <text x="300" y="200" font-size="11" fill="#64748b">手势：单击拉回（⌥⌘A）· 长按 3s 摸鱼（⌥⌘B）· 上划暂停（⌥⌘P）</text>
+  <text x="20" y="270" font-size="10" fill="#94a3b8">非 notch Mac：同样式 top-center 浮窗（DynamicNotchKit style: .auto 自动分流）</text>
+</svg>

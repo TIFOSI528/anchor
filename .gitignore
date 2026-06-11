@@ -1,0 +1,36 @@
+# Swift / Xcode
+.build/
+.swiftpm/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+Package.resolved
+
+# macOS
+.DS_Store
+*.swp
+
+# Build output
+output/
+*.dmg
+*.app/
+*.zip
+
+# Anchor runtime data
+~/.anchor/
+anchor.sock
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Local tooling (Claude Code skills / plugins)
+.claude/
+.agents/
+
+# Generated
+docs/_build/

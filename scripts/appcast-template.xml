@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sparkle appcast 模板（PR #28）。发布流程：
+  1. 生成签名密钥（一次性）：.build/artifacts/.../bin/generate_keys
+     公钥填进 package-app.sh 的 ANCHOR_SPARKLE_PUBLIC_KEY，私钥存 GitHub secret SPARKLE_ED_PRIVATE_KEY。
+  2. 每次 release：sign_update Anchor-X.Y.Z.dmg 得到 sparkle:edSignature，替换下面的占位。
+  3. 把本文件发布到 GitHub Pages，URL 填 ANCHOR_APPCAST_URL。
+-->
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Anchor 更新</title>
+    <item>
+      <title>0.1.0</title>
+      <pubDate>REPLACE_RFC822_DATE</pubDate>
+      <sparkle:version>0.1.0</sparkle:version>
+      <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="REPLACE_DMG_DOWNLOAD_URL"
+        length="REPLACE_FILE_BYTES"
+        type="application/octet-stream"
+        sparkle:edSignature="REPLACE_ED_SIGNATURE" />
+    </item>
+  </channel>
+</rss>

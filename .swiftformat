@@ -1,0 +1,18 @@
+# SwiftFormat config — see https://github.com/nicklockwood/SwiftFormat
+--swiftversion 6.0
+
+# Layout
+--indent 4
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+
+# Style
+--commas always
+--trimwhitespace always
+--ranges no-space
+--emptybraces no-space
+
+# Don't touch generated / third-party / non-Swift dirs
+--exclude .build,Sources/AnchorExtension

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- v1 不开 App Sandbox：需要 NSWorkspace 全局前台监控 + 拉回任意 app。 -->
+	<!-- 未来若用 Apple Events 读浏览器地址作为扩展的 fallback，需要这条。 -->
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+</dict>
+</plist>

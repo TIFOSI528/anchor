@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Anchor",
+  "version": "1.0.0",
+  "description": "把当前浏览器标签页地址同步给本机 Anchor app，用于专注力判定。Local-first，只连 127.0.0.1。",
+  "permissions": ["tabs", "alarms", "storage"],
+  "background": {
+    "service_worker": "service_worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html"
+}
