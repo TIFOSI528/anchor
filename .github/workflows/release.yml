@@ -30,9 +30,27 @@ jobs:
 
       # 公证需要 Developer ID 证书导入 + Apple 凭证，本 workflow 不强制；
       # secrets 就绪后把 ANCHOR_NOTARIZE=1 接进上一步即可。
+      # 对外发布推荐本地签名+公证后替换 Release 资产（见 RELEASING.md）。
+
+      - name: Sparkle sign dmg (skipped without secret)
+        env:
+          SPARKLE_PRIV: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          if [ -z "$SPARKLE_PRIV" ]; then echo "SPARKLE_ED_PRIVATE_KEY 未配置，跳过"; exit 0; fi
+          KEYFILE=$(mktemp)
+          printf '%s' "$SPARKLE_PRIV" > "$KEYFILE"
+          SIGN=.build/artifacts/sparkle/Sparkle/bin/sign_update
+          for dmg in output/*.dmg; do
+            echo "== $dmg ==" >> output/sparkle-signatures.txt
+            "$SIGN" -f "$KEYFILE" "$dmg" >> output/sparkle-signatures.txt
+          done
+          rm -f "$KEYFILE"
+          cat output/sparkle-signatures.txt
 
       - name: Upload dmg to release
         uses: softprops/action-gh-release@v2
         with:
-          files: output/*.dmg
+          files: |
+            output/*.dmg
+            output/sparkle-signatures.txt
           generate_release_notes: true

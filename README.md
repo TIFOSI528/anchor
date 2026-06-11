@@ -26,6 +26,11 @@
 
 <hr/>
 
+<p align="center">
+  <img src="Assets/demo/drift-demo.gif" alt="漂移 → 灵动岛倒计时 → 拉回绿区" width="600" />
+  <br/><sub>绿区休眠点 → 切到灰区 app 开始漂移倒计时 → 回到绿区收起</sub>
+</p>
+
 <a id="中文"></a>
 
 ## 一句话
@@ -85,19 +90,27 @@
 
 ## 状态
 
-🚧 **早期开发中**。v1 MVP 6–8 周交付，详见 [docs/mvp-roadmap.md](docs/mvp-roadmap.md)。
+**v0.1 功能完备，作者 dogfood 中** —— [v1 路线图](docs/mvp-roadmap.md) 28 项全部落地，149 个单元测试；灵动岛对刘海 / 无刘海机型分别适配（真刘海侧点 / 菜单栏嵌入胶囊）。
 
-## 开发
+## 安装
+
+**方式一：下载 dmg（推荐）**
+
+1. 到 [Releases](../../releases) 下载最新 `Anchor-x.y.z.dmg`，拖入「应用程序」
+2. 首次打开若被 Gatekeeper 拦截：右键 → 打开（公证完成后的版本无此步骤）
+3. **tab 级判定需要浏览器扩展**：Chrome 打开 `chrome://extensions` → 开发者模式 → 「加载已解压的扩展程序」→ 选 app 内的扩展目录（设置 → 通用 → 浏览器扩展 → 「安装指南」可直达）
+
+**方式二：源码构建**
 
 ```bash
-# 打开 Swift Package
-open Package.swift
-
-# 命令行构建
 swift build -c release
+zsh scripts/package-app.sh   # → output/Anchor.app + dmg
+open output/Anchor.app
 ```
 
-需求：macOS 14+，Swift 6.0+，Xcode 16+。
+需求：macOS 14+，Swift 6.0+，Xcode 16+。开发循环：`open Package.swift`，测试：`swift test`。
+
+发版流程（签名 / 公证 / Sparkle）见 [RELEASING.md](RELEASING.md)。
 
 ## License
 
