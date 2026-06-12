@@ -10,14 +10,21 @@
 2. Xcode → Settings → Accounts 登录后，Manage Certificates → 创建 **Developer ID Application** 证书
 3. 记下证书名，形如 `Developer ID Application: Your Name (TEAMID10)`
 4. App 专用密码（公证用）：https://appleid.apple.com → 登录与安全 → App 专用密码
+5. 把公证凭证存进钥匙串（**推荐；密码不进 shell 历史/环境**）：
+   ```bash
+   xcrun notarytool store-credentials anchor-notary \
+     --apple-id you@example.com --team-id TEAMID10
+   # 按提示交互输入 App 专用密码；之后脚本只引用 profile 名
+   export ANCHOR_NOTARY_PROFILE=anchor-notary
+   ```
 
-### 2. Sparkle 签名密钥（一次性）
+### 2. Sparkle 签名密钥（一次性）✅ 已生成（2026-06-12）
 ```bash
 swift build   # 确保依赖已拉取
 .build/artifacts/sparkle/Sparkle/bin/generate_keys
 ```
-- 私钥自动存入本机钥匙串（**备份它**；可 `generate_keys -x key.priv` 导出后存密码管理器）
-- 打印出的**公钥**填进下面的 `ANCHOR_SPARKLE_PUBLIC_KEY`
+- 私钥已在本机钥匙串（**备份它**：`generate_keys -x key.priv` 导出后存密码管理器）
+- 公钥已烤进 `package-app.sh` 默认值：`eSu0nsFWgzHoc2PK4f9GyUy0pvOVVfITU9/uYgb3oB8=`
 
 ### 3. GitHub 仓库
 ```bash
@@ -30,11 +37,10 @@ git push -u origin main
 ### 4. 环境变量（本地发版用，放 ~/.zshrc 或临时 export）
 ```bash
 export ANCHOR_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID10)"
-export ANCHOR_APPLE_ID="you@example.com"
-export ANCHOR_APPLE_PWD="xxxx-xxxx-xxxx-xxxx"   # App 专用密码
-export ANCHOR_TEAM_ID="TEAMID10"
-export ANCHOR_SPARKLE_PUBLIC_KEY="<generate_keys 打印的公钥>"
+export ANCHOR_NOTARY_PROFILE="anchor-notary"   # 推荐：见上面 store-credentials
 export ANCHOR_APPCAST_URL="https://tifosi528.github.io/anchor/appcast.xml"
+# 公钥已是脚本默认值，无需设置；不用 profile 时退路：
+# export ANCHOR_APPLE_ID=... ANCHOR_APPLE_PWD=... ANCHOR_TEAM_ID=...
 ```
 
 ## 一、每次发版（本地，~10 分钟）

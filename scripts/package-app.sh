@@ -83,7 +83,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 	<!-- Sparkle 自动更新。feed 上线前 SUEnableAutomaticChecks 保持 false（用户可在 Settings 打开）。 -->
 	<key>SUFeedURL</key>               <string>${ANCHOR_APPCAST_URL:-https://example.invalid/anchor/appcast.xml}</string>
 	<key>SUEnableAutomaticChecks</key> <false/>
-	<key>SUPublicEDKey</key>           <string>${ANCHOR_SPARKLE_PUBLIC_KEY:-REPLACE_WITH_GENERATED_ED25519_PUBLIC_KEY}</string>
+	<key>SUPublicEDKey</key>           <string>${ANCHOR_SPARKLE_PUBLIC_KEY:-eSu0nsFWgzHoc2PK4f9GyUy0pvOVVfITU9/uYgb3oB8=}</string>
 </dict>
 </plist>
 PLIST
@@ -108,16 +108,20 @@ codesign --verify --verbose=2 "$APP_PATH" 2>&1 | tail -2 || true
 
 if [[ "${ANCHOR_NOTARIZE:-0}" == "1" ]]; then
   echo "[+] 公证"
-  if [[ -z "${ANCHOR_APPLE_ID:-}" || -z "${ANCHOR_APPLE_PWD:-}" || -z "${ANCHOR_TEAM_ID:-}" ]]; then
-    echo "    跳过：需要 ANCHOR_APPLE_ID / ANCHOR_APPLE_PWD / ANCHOR_TEAM_ID（Developer ID 账号）"
-  else
-    ZIP_PATH="$OUTPUT_DIR/$APP_NAME-notarize.zip"
-    ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+  ZIP_PATH="$OUTPUT_DIR/$APP_NAME-notarize.zip"
+  ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+  if [[ -n "${ANCHOR_NOTARY_PROFILE:-}" ]]; then
+    # 推荐：凭证在钥匙串里（xcrun notarytool store-credentials <profile>），密码不进环境/历史。
+    xcrun notarytool submit "$ZIP_PATH" --keychain-profile "$ANCHOR_NOTARY_PROFILE" --wait
+    xcrun stapler staple "$APP_PATH"
+  elif [[ -n "${ANCHOR_APPLE_ID:-}" && -n "${ANCHOR_APPLE_PWD:-}" && -n "${ANCHOR_TEAM_ID:-}" ]]; then
     xcrun notarytool submit "$ZIP_PATH" \
       --apple-id "$ANCHOR_APPLE_ID" --password "$ANCHOR_APPLE_PWD" --team-id "$ANCHOR_TEAM_ID" --wait
     xcrun stapler staple "$APP_PATH"
-    rm -f "$ZIP_PATH"
+  else
+    echo "    跳过：设 ANCHOR_NOTARY_PROFILE（推荐）或 ANCHOR_APPLE_ID/PWD/TEAM_ID"
   fi
+  rm -f "$ZIP_PATH"
 fi
 
 if [[ "${ANCHOR_DMG:-1}" == "1" ]]; then
