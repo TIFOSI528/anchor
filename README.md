@@ -100,4 +100,4 @@ zsh scripts/package-app.sh    # → output/Anchor.app + dmg
 ---
 
 <p align="center"><b>一根隐形的橡皮筋，系在你和你的任务之间。</b><br/>
-<sub>GPL-3.0 · Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a> · 交互范式参考 <a href="https://github.com/Octane0411/open-vibe-island">open-vibe-island</a></sub></p>
+<sub>GPL-3.0 · Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a></sub></p>

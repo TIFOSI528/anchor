@@ -99,4 +99,4 @@ Bugs & ideas → [Issues](https://github.com/TIFOSI528/anchor/issues) · workflo
 ---
 
 <p align="center"><b>An invisible rubber band between you and your task.</b><br/>
-<sub>GPL-3.0 · Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a> · interaction patterns studied from <a href="https://github.com/Octane0411/open-vibe-island">open-vibe-island</a></sub></p>
+<sub>GPL-3.0 · Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a></sub></p>
