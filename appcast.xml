@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sparkle 更新源（app 内 SUFeedURL 指向本文件的 raw URL，见 RELEASING.md）。 -->
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Anchor 更新</title>
+    <item>
+      <title>0.1.0</title>
+      <pubDate>Fri, 12 Jun 2026 15:20:24 +0800</pubDate>
+      <sparkle:version>0.1.0</sparkle:version>
+      <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/TIFOSI528/anchor/releases/download/v0.1.0/Anchor-0.1.0.dmg"
+        length="2481708"
+        type="application/octet-stream"
+        sparkle:edSignature="wFaxSb/bTu5K+vtp9kv1H0q9UdCagECR4kLOEAHl2OSK9nVfTWi/rzFJ5YuOf2RjEIOyEyzo21bfBCEbV5tTDA==" />
+    </item>
+  </channel>
+</rss>

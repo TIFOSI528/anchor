@@ -92,12 +92,26 @@ printf 'APPL????' > "$CONTENTS/PkgInfo"
 
 echo "[5/6] 签名"
 if [[ -n "${ANCHOR_SIGN_IDENTITY:-}" ]]; then
-  # 分发签名：先签内部框架，再用 entitlements + 强化运行时签整个 app。
-  # 注意：Sparkle 内部还有 XPCServices / Updater.app 等嵌套组件，发布前需逐个签名 + 公证（见下方 TODO）。
+  # 分发签名：由内到外。公证要求包内所有可执行体都用本团队 Developer ID + 时间戳签名，
+  # Sparkle 自带的是 Sparkle 团队的签名，必须逐个重签嵌套组件
+  # （--preserve-metadata=entitlements 保留 XPC 的沙盒/网络 entitlements，Sparkle 官方要求）。
+  SPARKLE_FW="$FW_DIR/Sparkle.framework"
+  if [[ -d "$SPARKLE_FW" ]]; then
+    for nested in \
+      "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc" \
+      "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc" \
+      "$SPARKLE_FW/Versions/B/Autoupdate" \
+      "$SPARKLE_FW/Versions/B/Updater.app"; do
+      if [[ -e "$nested" ]]; then
+        codesign --force --options runtime --timestamp \
+          --preserve-metadata=entitlements --sign "$ANCHOR_SIGN_IDENTITY" "$nested"
+      fi
+    done
+  fi
   for fw in "$FW_DIR"/*.framework(N); do
-    codesign --force --options runtime --sign "$ANCHOR_SIGN_IDENTITY" "$fw"
+    codesign --force --options runtime --timestamp --sign "$ANCHOR_SIGN_IDENTITY" "$fw"
   done
-  codesign --force --options runtime --entitlements "$ENTITLEMENTS" --sign "$ANCHOR_SIGN_IDENTITY" "$APP_PATH"
+  codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$ANCHOR_SIGN_IDENTITY" "$APP_PATH"
 else
   # 本机验收：ad-hoc 深度签名，保证能直接双击启动（不走 Gatekeeper 公证）。
   codesign --force --deep --sign - "$APP_PATH"

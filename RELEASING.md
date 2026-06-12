@@ -38,7 +38,7 @@ git push -u origin main
 ```bash
 export ANCHOR_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID10)"
 export ANCHOR_NOTARY_PROFILE="anchor-notary"   # 推荐：见上面 store-credentials
-export ANCHOR_APPCAST_URL="https://tifosi528.github.io/anchor/appcast.xml"
+export ANCHOR_APPCAST_URL="https://raw.githubusercontent.com/TIFOSI528/anchor/main/appcast.xml"
 # 公钥已是脚本默认值，无需设置；不用 profile 时退路：
 # export ANCHOR_APPLE_ID=... ANCHOR_APPLE_PWD=... ANCHOR_TEAM_ID=...
 ```
