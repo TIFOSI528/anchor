@@ -27,6 +27,7 @@ struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.launchAtLogin) private var launchAtLogin = false
     @AppStorage(SettingsKey.islandPosition) private var islandPosition = IslandPosition.auto.rawValue
     @AppStorage(SettingsKey.hapticsEnabled) private var hapticsEnabled = true
+    @AppStorage(SettingsKey.hotkeysEnabled) private var hotkeysEnabled = true
     @AppStorage(SettingsKey.autoUpdateEnabled) private var autoUpdate = false
     @AppStorage(SettingsKey.extensionConnected) private var extensionConnected = false
 
@@ -44,6 +45,10 @@ struct GeneralSettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Toggle("手势触感反馈", isOn: $hapticsEnabled)
+                Toggle("全局快捷键（⌃⌥⌘ A/B/L/P）", isOn: $hotkeysEnabled)
+                Text("与其它应用冲突时可整体关闭（重启生效）；菜单与岛上入口不受影响。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
                 Toggle("自动检查更新", isOn: $autoUpdate)
             }
 
@@ -299,6 +304,7 @@ enum SettingsKey {
     static let launchAtLogin = "anchor.launchAtLogin"
     static let islandPosition = "anchor.islandPosition"
     static let hapticsEnabled = "anchor.hapticsEnabled"
+    static let hotkeysEnabled = "anchor.hotkeysEnabled"
     static let frictionEnabled = "anchor.frictionEnabled"
     static let seriousMode = "anchor.seriousMode"
     static let reduceFriction = "anchor.reduceFriction"

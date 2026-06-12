@@ -98,10 +98,17 @@ final class IslandController {
             model.form = .slacking(remaining: Int(remaining), total: 300)
             transition(to: .expanded)
 
-        case .paused, .offline:
+        case .paused:
+            // 暂停不消失：灰点留在原位作为恢复入口（曾因全隐藏+菜单图标被挤导致无路可回）。
+            model.form = .idle
+            model.paused = true
+            transition(to: .compact)
+
+        case .offline:
             model.form = .idle
             transition(to: .hidden)
         }
+        if case .paused = state {} else { model.paused = false }
         playUpgradeHapticIfNeeded()
     }
 

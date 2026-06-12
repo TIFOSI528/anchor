@@ -26,6 +26,8 @@ final class IslandViewModel: ObservableObject {
     @Published var pressing = false
     /// Focus Lock 激活中（休眠点变蓝，提示"只看这个"会话进行中）。
     @Published var locked = false
+    /// 暂停看护中（休眠点变灰——保留入口，点击可恢复）。
+    @Published var paused = false
 
     var onTap: () -> Void = {}
     var onLongPress: () -> Void = {}

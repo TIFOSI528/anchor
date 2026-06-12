@@ -1,9 +1,10 @@
 import AppKit
 
-/// 三个手势的键盘等效（spec §七）：⌥⌘A = 拉回、⌥⌘B = 摸鱼、⌥⌘P = 暂停。
+/// 手势的键盘等效（spec §七）：⌃⌥⌘A 拉回、⌃⌥⌘B 摸鱼、⌃⌥⌘L 锁定、⌃⌥⌘P 暂停/恢复。
 ///
-/// 本地监听始终可用；全局监听需要辅助功能权限——没授权就静默退化
-/// （菜单栏里的等效菜单项仍然可用）。
+/// 用三修饰键组合降低与其它 app 的冲突概率（⌥⌘ 系列被 IDE/效率工具大量占用）。
+/// 注意：macOS 全局监听只能"旁听"无法拦截——若仍与某 app 撞车，可在设置里整体关闭。
+/// 本地监听始终可用；全局监听需要辅助功能权限——没授权就静默退化（菜单项仍可用）。
 @MainActor
 final class HotkeyMonitor {
 
@@ -33,7 +34,7 @@ final class HotkeyMonitor {
     }
 
     private func handle(_ event: NSEvent) -> Bool {
-        let required: NSEvent.ModifierFlags = [.option, .command]
+        let required: NSEvent.ModifierFlags = [.control, .option, .command]
         guard event.modifierFlags.intersection([.option, .command, .control, .shift]) == required,
               let key = event.charactersIgnoringModifiers?.lowercased() else {
             return false

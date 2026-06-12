@@ -51,7 +51,7 @@ public struct StateReducer {
                     [.renderFriction(level: frictionLevel)])
 
         // MARK: - red zone tick (5-second buffer then friction kicks in)
-        case let (.red, .tick):
+        case (.red, .tick):
             // For v1 simplicity, red zone applies friction immediately at level 0.5
             // (see dynamic-island-spec.md §II for the full curve).
             return (state, [])
@@ -85,8 +85,12 @@ public struct StateReducer {
             return (.offline, [.snapBackToGreen, .playHaptic(.levelChange)])
 
         // MARK: - paused / offline
+        case (.paused, .sessionStarted):
+            // 恢复看护：回到 offline，下一个 appActivated（coordinator 立即补发）重新分类。
+            return (.offline, [.clearFriction])
+
         case (.paused, _):
-            return (state, []) // paused absorbs all events until user resumes
+            return (state, []) // 其余事件一律吸收，直到显式恢复
 
         default:
             return (state, [])

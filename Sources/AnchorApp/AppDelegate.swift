@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var statusMenuItem: NSMenuItem?
     private var presetMenu: NSMenu?
+    private var pauseItem: NSMenuItem?
     private var captureGreenItem: NSMenuItem?
     private var captureRedItem: NSMenuItem?
     private var captureGrayItem: NSMenuItem?
@@ -75,7 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(makeItem("立即拉回", #selector(snapBack), "a"))
         menu.addItem(makeItem("合法摸鱼 5 分钟", #selector(slack), "b"))
-        menu.addItem(makeItem("暂停看护...", #selector(pause), "p"))
+        let pauseItem = makeItem("暂停看护...", #selector(pause), "p")
+        menu.addItem(pauseItem)
+        self.pauseItem = pauseItem
         menu.addItem(.separator())
         let captureGreen = NSMenuItem(title: "把当前 app 加入绿区", action: #selector(captureToGreen), keyEquivalent: "")
         let captureRed = NSMenuItem(title: "把当前 app 加入红区", action: #selector(captureToRed), keyEquivalent: "")
@@ -112,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// ⌥⌘ 组合键的菜单等效（spec §七）；真正的全局热键由 HotkeyMonitor 负责。
     private func makeItem(_ title: String, _ action: Selector, _ key: String) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
-        item.keyEquivalentModifierMask = [.option, .command]
+        item.keyEquivalentModifierMask = [.control, .option, .command]
         return item
     }
 
@@ -183,6 +186,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         rebuildPresetMenu()
+        // 暂停/恢复是同一开关入口
+        if case .paused = coordinator.state {
+            pauseItem?.title = "恢复看护"
+        } else {
+            pauseItem?.title = "暂停看护..."
+        }
         guard let target = coordinator.captureTarget else {
             captureGreenItem?.title = "把当前 app 加入绿区"
             captureRedItem?.title = "把当前 app 加入红区"

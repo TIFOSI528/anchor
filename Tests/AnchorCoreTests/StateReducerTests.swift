@@ -86,8 +86,19 @@ final class StateReducerTests: XCTestCase {
         XCTAssertEqual(effects, [.clearFriction, .playHaptic(.alignment)])
     }
 
+    func testPausedAbsorbsEventsExceptResume() {
+        let paused = AnchorState.paused(reason: "开会")
+        // 吸收常规事件
+        let (still, _) = reducer.reduce(paused, event: .appActivated(AppContext(bundleId: "x")), classifier: greenClassifier)
+        XCTAssertEqual(still, paused)
+        // sessionStarted = 恢复看护
+        let (resumed, effects) = reducer.reduce(paused, event: .sessionStarted, classifier: greenClassifier)
+        XCTAssertEqual(resumed, .offline)
+        XCTAssertTrue(effects.contains(.clearFriction))
+    }
+
     func testSlackingCountsDownAndExitsAtZero() {
-        var state: AnchorState = .slacking(remaining: 5)
+        let state: AnchorState = .slacking(remaining: 5)
         let result = reducer.reduce(state, event: .tick(deltaSeconds: 5), classifier: greenClassifier)
         XCTAssertEqual(result.0, .offline)
         XCTAssertTrue(result.1.contains(.snapBackToGreen))

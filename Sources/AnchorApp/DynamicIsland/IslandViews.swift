@@ -55,7 +55,7 @@ struct IslandFormContent: View {
             )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
-            .accessibilityHint("单击拉回（⌥⌘A）· 长按 3 秒合法摸鱼（⌥⌘B）· 上划暂停（⌥⌘P）")
+            .accessibilityHint("单击拉回（⌃⌥⌘A）· 长按 3 秒合法摸鱼（⌃⌥⌘B）· 上划暂停（⌃⌥⌘P）")
     }
 
     @ViewBuilder
@@ -140,13 +140,20 @@ struct IslandCompactDot: View {
             .frame(width: 18, height: 14) // 命中区比 8pt 圆点大一圈
             .contentShape(Rectangle())
             .onTapGesture { model.onDotTap() }
-            .accessibilityLabel(model.locked ? "Anchor：已锁定" : "Anchor")
+            .accessibilityLabel(accessibilityText)
             .accessibilityHint("点击打开 Anchor 菜单")
     }
 
+    private var accessibilityText: String {
+        if model.paused { return "Anchor：已暂停，点击恢复" }
+        if model.locked { return "Anchor：已锁定" }
+        return "Anchor"
+    }
+
     private var dotColor: Color {
+        // 暂停 = 灰点（保留入口）；锁定 = 蓝点；正常休眠 = 绿点。
+        if model.paused { return Color(hex: 0x94A3B8) }
         switch model.form {
-        // 锁定中的休眠点用蓝色区分（"只看这个"会话进行中）。
         case .idle: return model.locked ? Color(hex: 0x3B82F6) : Color(hex: 0x22C55E)
         case .drift, .deepening, .slacking: return Color(hex: 0xF59E0B)
         case .red: return Color(hex: 0xDC2626)

@@ -83,7 +83,10 @@ final class AppCoordinator {
 
         observeFrontmostApp()
         startDaemon()
-        hotkeys.start()
+        if defaults.object(forKey: SettingsKey.hotkeysEnabled) == nil
+            || defaults.bool(forKey: SettingsKey.hotkeysEnabled) {
+            hotkeys.start()
+        }
         scheduleRecapTimers()
         startCheckpointTimer()
 
@@ -248,8 +251,21 @@ final class AppCoordinator {
     }
 
     func pauseGesture() {
+        // 已暂停时同一入口直接恢复（⌥⌘P / 菜单 / 岛点都是开关语义）。
+        if case .paused = state {
+            resumeGesture()
+            return
+        }
         guard let reason = PauseReasonPrompt.ask() else { return }
         handleEvent(.islandSwipedUp(reason: reason))
+    }
+
+    /// 恢复看护：退出 paused，并立刻对当前前台重新分类。
+    func resumeGesture() {
+        guard case .paused = state else { return }
+        handleEvent(.sessionStarted)
+        reclassifyFrontmost()
+        island.flashHint("已恢复看护")
     }
 
     // MARK: - recap

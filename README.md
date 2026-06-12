@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <img src="Assets/demo/drift-demo.gif" alt="漂移 → 灵动岛倒计时 → 拉回" width="600" />
-  <br/><sub>专注时几乎隐形 · 漂走时从菜单栏展开倒计时 · 单击一键拉回</sub>
+  <img src="Assets/demo/hero.svg" alt="漂移 → 灵动岛倒计时 → 拉回" width="600" />
+  <br/><sub>三幕循环：绿区隐形 → 漂移展开倒计时 → 单击拉回（设计演示）</sub>
 </p>
 
 <p align="center">中文 · <a href="README.en.md">English</a></p>
@@ -73,10 +73,10 @@ zsh scripts/package-app.sh    # → output/Anchor.app + dmg
 
 | 快捷键 | 动作 |
 |---|---|
-| `⌥⌘A` | 立即拉回最近的绿区 app |
-| `⌥⌘B` | 合法摸鱼 5 分钟 |
-| `⌥⌘L` | Focus Lock：锁定 / 解除「只看这个」 |
-| `⌥⌘P` | 暂停看护（需写下 ≥10 字理由，会进当晚复盘） |
+| `⌃⌥⌘A` | 立即拉回最近的绿区 app |
+| `⌃⌥⌘B` | 合法摸鱼 5 分钟 |
+| `⌃⌥⌘L` | Focus Lock：锁定 / 解除「只看这个」 |
+| `⌃⌥⌘P` | 暂停看护（≥10 字理由，进当晚复盘）；再按一次恢复 |
 
 ## 权限与隐私
 

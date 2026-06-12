@@ -16,8 +16,8 @@
 </p>
 
 <p align="center">
-  <img src="Assets/demo/drift-demo.gif" alt="drift → island countdown → snap back" width="600" />
-  <br/><sub>Nearly invisible while you focus · expands from the menu bar when you drift · one click snaps you back</sub>
+  <img src="Assets/demo/hero.svg" alt="drift → island countdown → snap back" width="600" />
+  <br/><sub>Three acts on loop: invisible in green → drift countdown → click to snap back (design demo)</sub>
 </p>
 
 <p align="center"><a href="README.md">中文</a> · English</p>
@@ -73,10 +73,10 @@ Requires macOS 14+ / Xcode 16+ / Swift 6.0+. Dev loop: `open Package.swift`; tes
 
 | Shortcut | Action |
 |---|---|
-| `⌥⌘A` | Snap back to the latest green-zone app |
-| `⌥⌘B` | 5-minute sanctioned break |
-| `⌥⌘L` | Focus Lock: engage / release "only this" |
-| `⌥⌘P` | Pause the watch (requires a ≥10-character reason — it shows up in tonight's recap) |
+| `⌃⌥⌘A` | Snap back to the latest green-zone app |
+| `⌃⌥⌘B` | 5-minute sanctioned break |
+| `⌃⌥⌘L` | Focus Lock: engage / release "only this" |
+| `⌃⌥⌘P` | Pause the watch (≥10-char reason, lands in tonight's recap); press again to resume |
 
 ## Permissions & privacy
 
