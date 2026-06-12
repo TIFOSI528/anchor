@@ -22,10 +22,10 @@ swift build   # 确保依赖已拉取
 ### 3. GitHub 仓库
 ```bash
 # 在 GitHub 网页建空仓库后：
-git remote add origin git@github.com:<你>/<repo>.git
+git remote add origin git@github.com:TIFOSI528/anchor.git
 git push -u origin main
 ```
-推送后 `ci.yml`（build+test）即生效。然后把 CONTRIBUTING.md 里的 `YOUR_USERNAME` 替换成真实路径。
+推送后 `ci.yml`（build+test）即生效。（仓库：https://github.com/TIFOSI528/anchor）
 
 ### 4. 环境变量（本地发版用，放 ~/.zshrc 或临时 export）
 ```bash
@@ -34,7 +34,7 @@ export ANCHOR_APPLE_ID="you@example.com"
 export ANCHOR_APPLE_PWD="xxxx-xxxx-xxxx-xxxx"   # App 专用密码
 export ANCHOR_TEAM_ID="TEAMID10"
 export ANCHOR_SPARKLE_PUBLIC_KEY="<generate_keys 打印的公钥>"
-export ANCHOR_APPCAST_URL="https://<你>.github.io/<repo>/appcast.xml"
+export ANCHOR_APPCAST_URL="https://tifosi528.github.io/anchor/appcast.xml"
 ```
 
 ## 一、每次发版（本地，~10 分钟）

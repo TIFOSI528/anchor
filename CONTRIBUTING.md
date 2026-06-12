@@ -12,7 +12,7 @@
 
 ```bash
 # 克隆
-git clone https://github.com/YOUR_USERNAME/anchor.git
+git clone https://github.com/TIFOSI528/anchor.git
 cd anchor
 
 # 构建
@@ -60,7 +60,7 @@ Closes #42
 
 ## 报告 Bug
 
-去 [Issues](https://github.com/YOUR_USERNAME/anchor/issues/new) 用 bug 模板。请附：
+去 [Issues](https://github.com/TIFOSI528/anchor/issues/new) 用 bug 模板。请附：
 
 - macOS 版本（`sw_vers`）
 - Anchor 版本（菜单栏 → About）
@@ -70,7 +70,7 @@ Closes #42
 
 ## 提建议
 
-去 [Discussions](https://github.com/YOUR_USERNAME/anchor/discussions) 开帖。在动手开发任何新功能前，建议先讨论。
+去 [Discussions](https://github.com/TIFOSI528/anchor/discussions) 开帖。在动手开发任何新功能前，建议先讨论。
 
 ## 不接受的贡献
 
