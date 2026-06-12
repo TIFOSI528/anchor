@@ -5,15 +5,15 @@
     <title>Anchor 更新</title>
     <item>
       <title>0.1.0</title>
-      <pubDate>Fri, 12 Jun 2026 16:02:00 +0800</pubDate>
+      <pubDate>Fri, 12 Jun 2026 16:40:00 +0800</pubDate>
       <sparkle:version>0.1.0</sparkle:version>
       <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <enclosure
         url="https://github.com/TIFOSI528/anchor/releases/download/v0.1.0/Anchor-0.1.0.dmg"
-        length="2463677"
+        length="2445652"
         type="application/octet-stream"
-        sparkle:edSignature="Ggg0FIzPzzIDzC+uvUOMudGHsR6HOaIzMvPwygC0pfdebPo/sOIesb2FfOIEd/Dcq8hQ9hGjZ9iCgT6N0u0oDg==" />
+        sparkle:edSignature="1E2Leje9XGzUyy/7M4xh0G24i0RmZXlU1GgHVMIvP+hzO19lNigQm1YK8taG5I6aeWzQ3TR+xtTVEoOeasu1DA==" />
     </item>
   </channel>
 </rss>
