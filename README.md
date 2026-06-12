@@ -1,135 +1,116 @@
-<!--
-  Anchor — README (中文版优先)
-  English version below ↓
--->
-
 <p align="center">
-  <img src="Assets/Brand/anchor-logo.svg" alt="Anchor" width="120" />
+  <img src="Assets/Brand/anchor-logo.svg" alt="Anchor" width="110" />
 </p>
 
 <h1 align="center">Anchor</h1>
 
+<p align="center"><b>macOS 灵动岛专注力工具 —— 桅杆上的瞭望员，不是狱卒。</b></p>
+
 <p align="center">
-  <b>桅杆上的瞭望员，不是狱卒。</b><br/>
-  一根隐形的橡皮筋，系在你和你的任务之间。
+  <a href="https://github.com/TIFOSI528/anchor/releases/latest"><img src="https://img.shields.io/github/v/release/TIFOSI528/anchor?label=release" alt="Release"></a>
+  <a href="https://github.com/TIFOSI528/anchor/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/TIFOSI528/anchor/ci.yml?branch=main&label=CI" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-blue" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Swift-6.0-orange" alt="Swift 6">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/TIFOSI528/anchor" alt="GPL-3.0"></a>
+  <a href="https://github.com/TIFOSI528/anchor/releases"><img src="https://img.shields.io/github/downloads/TIFOSI528/anchor/total" alt="Downloads"></a>
 </p>
 
 <p align="center">
-  <a href="#中文">中文</a> ·
-  <a href="#english">English</a> ·
-  <a href="docs/product-philosophy.md">产品哲学</a> ·
-  <a href="docs/dynamic-island-spec.md">灵动岛规范</a> ·
-  <a href="docs/daily-recap-spec.md">每日复盘规范</a> ·
-  <a href="docs/technical-architecture.md">技术架构</a> ·
-  <a href="docs/mvp-roadmap.md">v1 路线图</a>
+  <img src="Assets/demo/drift-demo.gif" alt="漂移 → 灵动岛倒计时 → 拉回" width="600" />
+  <br/><sub>专注时几乎隐形 · 漂走时从菜单栏展开倒计时 · 单击一键拉回</sub>
 </p>
 
-<hr/>
+<p align="center">中文 · <a href="#english">English</a></p>
 
-<p align="center">
-  <img src="Assets/demo/drift-demo.gif" alt="漂移 → 灵动岛倒计时 → 拉回绿区" width="600" />
-  <br/><sub>绿区休眠点 → 切到灰区 app 开始漂移倒计时 → 回到绿区收起</sub>
-</p>
+---
 
-<a id="中文"></a>
+你在写代码，手却点开了推特——Anchor 不会锁死它，只是让灵动岛亮起一个倒计时，屏幕随着漂移时间渐渐起雾，单击一下就回到刚才的工作。**不屏蔽、不审判，只是在你漂走时轻轻拽一下。**
 
-## 一句话
+## 特性
 
-**Anchor 是一个 macOS 上的开源专注力工具，用灵动岛形态做"温和牵引"——不屏蔽，不审判，只是在你漂走时轻轻拽一下。**
-
-## 它解决什么
-
-现有专注力软件分两个极端：
-
-- 一极是 **Cold Turkey / Freedom 这类"硬屏蔽"**——把你锁在牢里，用户敌意大、易反弹。
-- 另一极是 **Rize / RescueTime 这类"被动统计"**——只看报表，不干预，对实际行为改变约等于零。
-
-中间地带几乎没人做。**Anchor 占据的就是这个中间地带：渐进 friction + 黑白灰三态 + 灵动岛形态 + 每日叙事化复盘。**
-
-## 它和别人不一样的地方
-
-| | Cold Turkey | One Sec | Rize | Opal | **Anchor** |
-|---|---|---|---|---|---|
-| 黑名单 | ✅ 硬屏蔽 | ✅ | ❌ | ✅ | ✅ 渐进式 |
-| 白名单 | ❌ | ❌ | ❌ | ❌ | ✅ |
-| 灰区计时 | ❌ | ❌ | ✅ 仅统计 | ❌ | ✅ + 漂移衰减 |
-| Tab 级粒度 | 仅 domain | ❌ | ❌ | ❌ | ✅ URL pattern |
-| 灵动岛形态 | ❌ | ❌ | ❌ | ❌ | ✅ |
-| 渐进 friction | ❌ | ✅ 单次 | ❌ | ❌ | ✅ 时间曲线 |
-| 一键拉回 | ❌ | ❌ | ❌ | ❌ | ✅ |
-| 叙事化复盘 | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Local-first 开源 | ❌ | ❌ | ❌ | ❌ | ✅ |
-
-## 核心机制
-
-**三态空间**：
-
-- **绿区** = 白名单 app / tab（用户当前任务允许的）。灵动岛几乎隐形。
-- **灰区** = 未分类。默认放行但计时。
-- **红区** = 黑名单（Twitter feed、小红书、抖音等）。立即 friction。
-
-**漂移衰减**：离开绿区后，灵动岛会从静默呼吸 → 倒计时圆环 → 橙色拉回按钮 → 红色屏幕模糊，**friction 是连续曲线，不是开关**。
-
-**三个手势，一辈子只学三个**：
-
-- **单击灵动岛** → 一键拉回最近的绿区 app（< 200ms）
-- **长按 3 秒** → 承认"我就是要摸鱼"，合法休息 5 分钟
-- **向上划走** → 暂停 session（需打字 10 字理由）
-
-**每日复盘**：每天 22:00 灵动岛轻敲一下，打开是一段像朋友写给你的复盘信，加上时间线、漂移热力图、今日罪人榜、漂移链。周日 21:00 自动生成"周回顾 + 1 条可一键 apply 的 preset 建议"，形成 *统计 → 建议 → 优化 → 下周更好* 的闭环。
-
-详细规范见 [docs/dynamic-island-spec.md](docs/dynamic-island-spec.md) 和 [docs/daily-recap-spec.md](docs/daily-recap-spec.md)。
-
-## 不做什么（重要）
-
-- **不做硬屏蔽**——Anchor 永远保留逃生通道（长按摸鱼）。
-- **不做 team mode**——自律工具和社交压力工具是两种不同产品。
-- **不上云**——所有数据本地 SQLite，零账号，零遥测。
-- **不做反作弊**（v1）——Anchor 是"温柔的橡皮筋"，不是"系统监狱"。
-- **不做跨平台**（v1）——macOS only，吃尽 Dynamic Island / Notch 的硬件红利。
-
-## 状态
-
-**v0.1 功能完备，作者 dogfood 中** —— [v1 路线图](docs/mvp-roadmap.md) 28 项全部落地，149 个单元测试；灵动岛对刘海 / 无刘海机型分别适配（真刘海侧点 / 菜单栏嵌入胶囊）。
+- **灵动岛形态** —— 刘海机型贴原生刘海展开，无刘海机型化作菜单栏胶囊（空闲只占一个小圆点，且点击穿透，不挡系统图标）
+- **三区规则** —— 绿区（当前任务允许的 app/网站）几乎无感；灰区（未分类）放行但开始漂移倒计时；红区（黑名单）立即介入，留 5 秒手滑缓冲
+- **Tab 级粒度** —— 配合 Chrome 扩展，规则可以精确到 URL：`github.com/你的仓库` 是绿区，`github.com/trending` 是红区
+- **一键拉回** —— 单击灵动岛，立刻切回最近的工作 app（< 200ms）
+- **合法摸鱼** —— 长按 3 秒承认"我就是想歇会儿"，光明正大休息 5 分钟；每天前 3 次到点温柔询问，之后强制拉回
+- **Focus Lock** —— 「只看这个」：把当前页面 / 站点 / app 设为唯一绿区，读一篇论文时连平时的绿区都算漂移
+- **渐进摩擦** —— 屏幕模糊随漂移时长沿曲线加深，是提醒不是惩罚；所有干预都能在设置里一键关闭
+- **叙事化复盘** —— 每晚 22:00 一封"朋友写给你的信"：Deep Score（公式公开）、24h 时间线、本周热力图、今日罪人榜、漂移链；周日自动给一条可一键应用的规则建议
+- **Local-first** —— 数据只存本地 SQLite，零账号、零遥测、零订阅，GPL-3.0 开源
 
 ## 安装
 
-**方式一：下载 dmg（推荐）**
+从 [**Releases**](https://github.com/TIFOSI528/anchor/releases/latest) 下载最新 `Anchor-x.y.z.dmg`，拖入「应用程序」即可（已签名公证，无 Gatekeeper 拦截）。内置 Sparkle 自动更新。
 
-1. 到 [Releases](../../releases) 下载最新 `Anchor-x.y.z.dmg`，拖入「应用程序」
-2. 首次打开若被 Gatekeeper 拦截：右键 → 打开（公证完成后的版本无此步骤）
-3. **tab 级判定需要浏览器扩展**：Chrome 打开 `chrome://extensions` → 开发者模式 → 「加载已解压的扩展程序」→ 选 app 内的扩展目录（设置 → 通用 → 浏览器扩展 → 「安装指南」可直达）
+**浏览器扩展**（启用 tab 级判定，可选但强烈推荐）：
 
-**方式二：源码构建**
+1. Chrome 打开 `chrome://extensions`，右上角开启「开发者模式」
+2. 「加载已解压的扩展程序」→ 选择 app 内的扩展目录（Anchor 设置 → 通用 → 浏览器扩展 → **安装指南** 一键定位）
+3. 设置页的连接状态变绿即生效
+
+<details>
+<summary>从源码构建</summary>
 
 ```bash
+git clone https://github.com/TIFOSI528/anchor.git && cd anchor
 swift build -c release
-zsh scripts/package-app.sh   # → output/Anchor.app + dmg
-open output/Anchor.app
+zsh scripts/package-app.sh    # → output/Anchor.app + dmg
 ```
 
-需求：macOS 14+，Swift 6.0+，Xcode 16+。开发循环：`open Package.swift`，测试：`swift test`。
+需求：macOS 14+ / Xcode 16+ / Swift 6.0+。开发循环 `open Package.swift`，测试 `swift test`。
+</details>
 
-发版流程（签名 / 公证 / Sparkle）见 [RELEASING.md](RELEASING.md)。
+## 快速上手
 
-## License
+1. 启动后：菜单栏出现 **⚓ 图标**，屏幕顶部中央一个**呼吸绿点**
+2. 菜单栏 → **场景** → 选一个（内置「写代码 / 读资料 / 随便看看」，可自定义规则，支持 `*` 通配）
+3. 切到无关 app 试试——绿点原地展开成倒计时胶囊，**单击它**立刻回到工作
+4. 漂移当下想拉黑某个 app / 网站？菜单栏 → **「把当前 app / 站点加入红区」**，立即生效
 
-GPL-3.0。本项目精神继承 [open-vibe-island](https://github.com/Octane0411/open-vibe-island)：**你不应该为监控自己的注意力付订阅费。**
+### 快捷键
+
+| 快捷键 | 动作 |
+|---|---|
+| `⌥⌘A` | 立即拉回最近的绿区 app |
+| `⌥⌘B` | 合法摸鱼 5 分钟 |
+| `⌥⌘L` | Focus Lock：锁定 / 解除「只看这个」 |
+| `⌥⌘P` | 暂停看护（需写下 ≥10 字理由，会进当晚复盘） |
+
+## 权限与隐私
+
+| 能力 | 所需权限 |
+|---|---|
+| 前台 app 监控、灵动岛、复盘 | **无需任何权限** |
+| 浏览器 tab 判定 | 扩展（仅连本机 `127.0.0.1`，不出网） |
+| 全局快捷键、滚动锁（默认关） | 辅助功能（可选，不授权则静默降级） |
+
+所有数据保存在 `~/Library/Application Support/Anchor/` 的 SQLite 里，没有账号、没有云、没有任何遥测。「为什么不上 Mac App Store？」——沙盒会禁掉前台监控这条命根子，所以走签名公证的直接分发。
+
+## 设计立场
+
+**不做硬屏蔽**（永远留逃生通道）、**不做社交压力**（自律工具不该有排行榜）、**不做云和遥测**。完整的产品哲学、灵动岛规范、复盘规范、技术架构见 [`docs/`](docs/)。
+
+## 参与
+
+- 提 bug / 建议：[Issues](https://github.com/TIFOSI528/anchor/issues) · 流程见 [CONTRIBUTING.md](CONTRIBUTING.md)
+- 版本历史：[CHANGELOG.md](CHANGELOG.md) · 发版流程：[RELEASING.md](RELEASING.md)
 
 ---
 
 <a id="english"></a>
 
-## English (Short Version)
+## English
 
-**Anchor** is an open-source macOS focus tool that uses the Dynamic Island as a *gentle tether*, not a jailer.
+**Anchor** is an open-source macOS focus tool that uses a Dynamic-Island-style overlay as a *gentle tether*, not a jailer: when you drift away from your task, the island shows a countdown and the screen gradually blurs — one click snaps you back to work.
 
-- **Three-state space**: green (whitelist) / gray (unclassified) / red (blacklist).
-- **Drift decay**: when you leave the green zone, friction grows along a smooth curve — not an on/off switch.
-- **Three gestures**: tap to snap back · long-press to admit you're slacking (5min legal break) · swipe to pause.
-- **Daily recap**: every 22:00 a narrative reflection — not a dashboard wall.
-- **Local-first, no account, no telemetry, no subscription. GPL-3.0.**
+**Highlights** — native notch integration (menu-bar pill on non-notch Macs) · green / gray / red zone rules with **tab-level granularity** via a Chrome extension (`github.com/your-repo` green, `github.com/trending` red) · one-click snap-back (< 200ms) · sanctioned 5-minute breaks (long-press) · Focus Lock ("only this page / site / app") · progressive friction curve, always one toggle away from off · a narrative daily recap at 22:00 with an open-formula Deep Score · local-first: SQLite on disk, no account, no telemetry, no subscription.
 
-Full docs (Chinese-first) under [`docs/`](docs/). English translation: work in progress.
+**Install**: grab the notarized dmg from [Releases](https://github.com/TIFOSI528/anchor/releases/latest). For tab-level rules, load the bundled Chrome extension (Settings → General → Browser Extension → Install Guide). Build from source: `swift build -c release && zsh scripts/package-app.sh` (macOS 14+, Swift 6).
 
-> "You shouldn't need to pay a subscription to monitor your own attention." — inspired by [open-vibe-island](https://github.com/Octane0411/open-vibe-island).
+**Shortcuts**: `⌥⌘A` snap back · `⌥⌘B` 5-min break · `⌥⌘L` focus lock · `⌥⌘P` pause.
+
+Core monitoring needs **zero permissions**; the extension talks only to `127.0.0.1`. Docs (Chinese-first) live in [`docs/`](docs/).
+
+---
+
+<p align="center"><sub>GPL-3.0 · 灵感与精神来自 <a href="https://github.com/Octane0411/open-vibe-island">open-vibe-island</a> —— 你不应该为监控自己的注意力付订阅费。<br/>Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a></sub></p>
