@@ -14,7 +14,7 @@ final class IslandController {
 
     enum Level: Int { case hidden, compact, expanded }
 
-    private var notch: DynamicNotch<IslandExpandedView, IslandCompactDot, EmptyView>?
+    private var notch: (any DynamicNotchControllable)?
     private var pill: MenuBarPillRenderer?
     /// 真刘海屏的绿区侧点：不画黑壳，零覆盖贴在硬件刘海左侧（下沿绝对对齐）。
     private var sideDot: MenuBarPillRenderer?
@@ -30,33 +30,46 @@ final class IslandController {
         let hasNotch = Self.screenHasNotch
 
         // 「灵动岛位置」在 init 时读取，更改后重启生效（窗口此时创建）。
-        let style: DynamicNotchStyle?
-        switch position {
-        case .auto: style = hasNotch ? .auto : nil // 无刘海 → 自研菜单栏嵌入
-        case .menuBar: style = nil
-        case .notch: style = .notch
-        case .topCenter: style = .floating
-        }
-
-        if let style {
+        // hover 行为一律关闭：展开/收起完全由状态机驱动，keepVisible 会让
+        // hide() 在鼠标悬停时每 0.1s 重试——拉回后壳收不掉、出现双绿点 + 卡顿。
+        if hasNotch, position == .auto || position == .notch {
+            // 真刘海：顶角半径 0 → 展开面板宽度与硬件刘海严格相等（不外扩 2×15pt）；
+            // compact 由零覆盖侧点接管，黑壳里不放任何 compact 内容。
             notch = DynamicNotch(
-                hoverBehavior: [.keepVisible],
-                style: style,
-                expanded: { IslandExpandedView(model: model) },
-                compactLeading: { IslandCompactDot(model: model) }
+                hoverBehavior: [],
+                style: .notch(topCornerRadius: 0, bottomCornerRadius: 14),
+                expanded: { IslandExpandedView(model: model) }
             )
-            // 真刘海 + 非浮窗：compact 用零覆盖侧点替代 DynamicNotchKit 的黑壳
-            // （黑壳底角 14pt 比硬件刘海肥、hover 还会多出 1–2pt，见设计稿修订）。
-            if hasNotch, position != .topCenter {
-                sideDot = MenuBarPillRenderer(model: model, placement: .besideNotch)
-            }
+            sideDot = MenuBarPillRenderer(model: model, placement: .besideNotch)
         } else {
-            pill = MenuBarPillRenderer(model: model)
+            switch position {
+            case .auto, .menuBar:
+                pill = MenuBarPillRenderer(model: model)
+            case .notch: // 无刘海屏强制人造刘海
+                notch = DynamicNotch(
+                    hoverBehavior: [],
+                    style: .notch,
+                    expanded: { IslandExpandedView(model: model) },
+                    compactLeading: { IslandCompactDot(model: model) }
+                )
+            case .topCenter:
+                notch = DynamicNotch(
+                    hoverBehavior: [],
+                    style: .floating,
+                    expanded: { IslandExpandedView(model: model) },
+                    compactLeading: { IslandCompactDot(model: model) }
+                )
+            }
         }
     }
 
     private static var screenHasNotch: Bool {
         (NSScreen.main?.safeAreaInsets.top ?? 0) > 0
+    }
+
+    /// 真刘海屏优先（外接屏环境下岛跟着刘海走，与参考实现一致）。
+    private static var targetScreen: NSScreen {
+        NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main ?? NSScreen.screens[0]
     }
 
     /// 由 coordinator 在每次状态变化 / tick 时调用。
@@ -99,9 +112,9 @@ final class IslandController {
         if level == .compact, let notch {
             // 绿区时短暂展开展示 hint，随后缩回。
             Task {
-                await notch.expand()
+                await notch.expand(on: Self.targetScreen)
                 try? await Task.sleep(for: .seconds(1.8))
-                if self.level == .compact { await notch.compact() }
+                if self.level == .compact { await notch.compact(on: Self.targetScreen) }
             }
         }
     }
@@ -122,7 +135,7 @@ final class IslandController {
             sideDot.apply(target == .compact ? .compact : .hidden)
             Task {
                 switch target {
-                case .expanded: await notch.expand()
+                case .expanded: await notch.expand(on: Self.targetScreen)
                 case .compact, .hidden: await notch.hide()
                 }
             }
@@ -132,8 +145,8 @@ final class IslandController {
         Task {
             switch target {
             case .hidden: await notch.hide()
-            case .compact: await notch.compact()
-            case .expanded: await notch.expand()
+            case .compact: await notch.compact(on: Self.targetScreen)
+            case .expanded: await notch.expand(on: Self.targetScreen)
             }
         }
     }

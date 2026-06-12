@@ -62,7 +62,8 @@ struct IslandFormContent: View {
     private var content: some View {
         switch model.form {
         case .idle:
-            BreathingDot()
+            // 展开壳里不放休眠点：拉回后收起动画期间会闪出"壳内绿点"（侧点已在刘海旁）。
+            Color.clear.frame(width: 2, height: 2)
 
         case let .drift(elapsed, threshold):
             HStack(spacing: 8) {

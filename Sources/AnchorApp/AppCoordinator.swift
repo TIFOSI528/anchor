@@ -485,7 +485,11 @@ final class AppCoordinator {
             state: state,
             redElapsed: redElapsed,
             driftThreshold: Int(presetLibrary?.activePreset.driftThresholdSeconds ?? 60),
-            snapBackName: lastGreen.snapBackTarget.map(displayName(for:))
+            snapBackName: lastGreen.snapBackTarget.map { ctx in
+                // 岛上空间金贵：app 名超长截断，避免展开面板被文本撑得比刘海宽。
+                let name = displayName(for: ctx)
+                return name.count > 12 ? String(name.prefix(11)) + "…" : name
+            }
         )
     }
 
