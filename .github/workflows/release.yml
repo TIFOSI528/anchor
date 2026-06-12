@@ -52,5 +52,6 @@ jobs:
         with:
           files: |
             output/*.dmg
+            output/*.zip
             output/sparkle-signatures.txt
           generate_release_notes: true

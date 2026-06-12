@@ -20,7 +20,7 @@
   <br/><sub>专注时几乎隐形 · 漂走时从菜单栏展开倒计时 · 单击一键拉回</sub>
 </p>
 
-<p align="center">中文 · <a href="#english">English</a></p>
+<p align="center">中文 · <a href="README.en.md">English</a></p>
 
 ---
 
@@ -44,9 +44,11 @@
 
 **浏览器扩展**（启用 tab 级判定，可选但强烈推荐）：
 
-1. Chrome 打开 `chrome://extensions`，右上角开启「开发者模式」
-2. 「加载已解压的扩展程序」→ 选择 app 内的扩展目录（Anchor 设置 → 通用 → 浏览器扩展 → **安装指南** 一键定位）
-3. 设置页的连接状态变绿即生效
+1. 在同一 [Releases](https://github.com/TIFOSI528/anchor/releases/latest) 页下载 `anchor-chrome-extension-x.y.z.zip` 并解压
+2. Chrome 打开 `chrome://extensions`，右上角开启「开发者模式」→「加载已解压的扩展程序」→ 选中解压目录
+3. Anchor 设置 → 通用 里的连接状态变绿即生效
+
+> 也可以不下载 zip：设置 → 浏览器扩展 → **安装指南** 会直接定位 app 内置的扩展目录。Chrome Web Store 上架在计划中，目前 zip 是官方渠道。
 
 <details>
 <summary>从源码构建</summary>
@@ -97,20 +99,5 @@ zsh scripts/package-app.sh    # → output/Anchor.app + dmg
 
 ---
 
-<a id="english"></a>
-
-## English
-
-**Anchor** is an open-source macOS focus tool that uses a Dynamic-Island-style overlay as a *gentle tether*, not a jailer: when you drift away from your task, the island shows a countdown and the screen gradually blurs — one click snaps you back to work.
-
-**Highlights** — native notch integration (menu-bar pill on non-notch Macs) · green / gray / red zone rules with **tab-level granularity** via a Chrome extension (`github.com/your-repo` green, `github.com/trending` red) · one-click snap-back (< 200ms) · sanctioned 5-minute breaks (long-press) · Focus Lock ("only this page / site / app") · progressive friction curve, always one toggle away from off · a narrative daily recap at 22:00 with an open-formula Deep Score · local-first: SQLite on disk, no account, no telemetry, no subscription.
-
-**Install**: grab the notarized dmg from [Releases](https://github.com/TIFOSI528/anchor/releases/latest). For tab-level rules, load the bundled Chrome extension (Settings → General → Browser Extension → Install Guide). Build from source: `swift build -c release && zsh scripts/package-app.sh` (macOS 14+, Swift 6).
-
-**Shortcuts**: `⌥⌘A` snap back · `⌥⌘B` 5-min break · `⌥⌘L` focus lock · `⌥⌘P` pause.
-
-Core monitoring needs **zero permissions**; the extension talks only to `127.0.0.1`. Docs (Chinese-first) live in [`docs/`](docs/).
-
----
-
-<p align="center"><sub>GPL-3.0 · 灵感与精神来自 <a href="https://github.com/Octane0411/open-vibe-island">open-vibe-island</a> —— 你不应该为监控自己的注意力付订阅费。<br/>Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a></sub></p>
+<p align="center"><b>一根隐形的橡皮筋，系在你和你的任务之间。</b><br/>
+<sub>GPL-3.0 · Built with <a href="https://github.com/MrKai77/DynamicNotchKit">DynamicNotchKit</a> · <a href="https://sparkle-project.org">Sparkle</a> · <a href="https://github.com/stephencelis/SQLite.swift">SQLite.swift</a> · 交互范式参考 <a href="https://github.com/Octane0411/open-vibe-island">open-vibe-island</a></sub></p>

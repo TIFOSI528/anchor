@@ -50,9 +50,15 @@ if [[ -d "$PROJECT_ROOT/Assets/Brand" ]]; then
   ditto "$PROJECT_ROOT/Assets/Brand" "$RES_DIR/Brand"
 fi
 
-# Chrome 扩展（Settings 的"安装指南"按钮指向这里）。
+# Chrome 扩展（Settings 的"安装指南"按钮指向这里），并产出独立 zip 随 Release 分发。
 if [[ -d "$PROJECT_ROOT/Sources/AnchorExtension/chrome" ]]; then
   ditto "$PROJECT_ROOT/Sources/AnchorExtension/chrome" "$RES_DIR/AnchorExtension/chrome"
+  ditto -c -k "$PROJECT_ROOT/Sources/AnchorExtension/chrome" "$OUTPUT_DIR/anchor-chrome-extension-$VERSION.zip"
+fi
+
+# App 图标（swift scripts/generate-appicon.swift 生成）。
+if [[ -f "$PROJECT_ROOT/Assets/Brand/AppIcon.icns" ]]; then
+  cp "$PROJECT_ROOT/Assets/Brand/AppIcon.icns" "$RES_DIR/AppIcon.icns"
 fi
 
 # 二进制只带 @loader_path 这一条 rpath；补一条指向 Contents/Frameworks，
@@ -78,6 +84,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 	<key>NSHighResolutionCapable</key> <true/>
 	<!-- menu-bar / overlay app：不在 Dock 显示图标、无主窗口。 -->
 	<key>LSUIElement</key>             <true/>
+	<key>CFBundleIconFile</key>        <string>AppIcon</string>
 	<key>NSHumanReadableCopyright</key> <string>© 2026 Anchor. GPL-3.0.</string>
 	<key>NSAppleEventsUsageDescription</key> <string>Anchor 需要读取浏览器当前标签页地址，来判断你在绿区还是漂移。</string>
 	<!-- Sparkle 自动更新。feed 上线前 SUEnableAutomaticChecks 保持 false（用户可在 Settings 打开）。 -->
@@ -146,7 +153,18 @@ if [[ "${ANCHOR_DMG:-1}" == "1" ]]; then
   mkdir -p "$STAGE_DIR"
   ditto "$APP_PATH" "$STAGE_DIR/$APP_NAME.app"
   ln -s /Applications "$STAGE_DIR/Applications"
-  hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE_DIR" -ov -format UDZO "$DMG_PATH" -quiet
+  if [[ -f "$PROJECT_ROOT/Assets/Brand/AppIcon.icns" ]]; then
+    cp "$PROJECT_ROOT/Assets/Brand/AppIcon.icns" "$STAGE_DIR/.VolumeIcon.icns"
+  fi
+  RW_DMG="$OUTPUT_DIR/$APP_NAME-rw.dmg"
+  rm -f "$RW_DMG"
+  hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE_DIR" -ov -format UDRW "$RW_DMG" -quiet
+  MOUNT_DIR=$(mktemp -d)
+  hdiutil attach "$RW_DMG" -mountpoint "$MOUNT_DIR" -nobrowse -quiet
+  SetFile -a C "$MOUNT_DIR" 2>/dev/null || true   # 卷根 custom-icon 位（挂载窗口显示锚图标）
+  hdiutil detach "$MOUNT_DIR" -quiet
+  hdiutil convert "$RW_DMG" -format UDZO -o "$DMG_PATH" -quiet
+  rm -f "$RW_DMG"
   rm -rf "$STAGE_DIR"
   echo "  → $DMG_PATH"
 fi
