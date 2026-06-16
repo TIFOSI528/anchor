@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import AnchorCore
 
 /// notch 后端的展开态：内容 + 悬挂在下方的 hint 气泡。
@@ -162,20 +163,62 @@ struct IslandCompactDot: View {
 }
 
 /// 2 秒周期呼吸动画的小圆点（形态 0）。
-struct BreathingDot: View {
+///
+/// 用 CALayer 的 `CABasicAnimation` 而非 SwiftUI `repeatForever`：动画交给 WindowServer
+/// 渲染线程插值，app 主线程稳态 ~0% CPU——满足"绿区不触发任何 UI 重绘"的能耗不变量
+/// （SwiftUI repeatForever 会持续 churn 渲染循环，实测空闲 ~2.5% CPU）。
+struct BreathingDot: NSViewRepresentable {
     var color: Color = Color(hex: 0x22C55E)
-    @State private var bright = false
 
-    var body: some View {
-        Circle()
-            .fill(color)
-            .frame(width: 8, height: 8)
-            .opacity(bright ? 1.0 : 0.35)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) {
-                    bright = true
-                }
-            }
+    func makeNSView(context: Context) -> BreathingDotView {
+        BreathingDotView()
+    }
+
+    func updateNSView(_ view: BreathingDotView, context: Context) {
+        view.dotColor = NSColor(color)
+    }
+}
+
+final class BreathingDotView: NSView {
+    private let dot = CALayer()
+
+    var dotColor: NSColor = .systemGreen {
+        didSet {
+            // 改色不重启动画：合成器动画不受影响。
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            dot.backgroundColor = dotColor.cgColor
+            CATransaction.commit()
+        }
+    }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: 8, height: 8) }
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
+        dot.bounds = CGRect(x: 0, y: 0, width: 8, height: 8)
+        dot.cornerRadius = 4
+        dot.backgroundColor = dotColor.cgColor
+        layer?.addSublayer(dot)
+
+        let breath = CABasicAnimation(keyPath: "opacity")
+        breath.fromValue = 0.35
+        breath.toValue = 1.0
+        breath.duration = 1.0
+        breath.autoreverses = true
+        breath.repeatCount = .infinity
+        breath.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        breath.isRemovedOnCompletion = false
+        dot.add(breath, forKey: "breath")
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func layout() {
+        super.layout()
+        dot.position = CGPoint(x: bounds.midX, y: bounds.midY)
     }
 }
 
