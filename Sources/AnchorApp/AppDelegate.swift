@@ -38,9 +38,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         coordinator.onStateChange = { [weak self] state in
             self?.updateStatus(state)
         }
-        // 兜底入口：状态项被挤掉（刘海机型菜单栏溢出）时，点岛上的绿点也能开菜单。
+        // 入口统一到岛：左键绿点 / 右键任何状态，都弹完整菜单——
+        // 不依赖菜单栏图标（会被挤掉）、不用快捷键。
         coordinator.island.model.onDotTap = { [weak self] in
             self?.popUpStatusMenu()
+        }
+        coordinator.island.model.onSecondaryClick = { [weak self] in
+            self?.popUpStatusMenu()
+        }
+        NotificationCenter.default.addObserver(
+            forName: .anchorMenuBarIconChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.statusItem?.isVisible = !UserDefaults.standard.bool(forKey: SettingsKey.hideMenuBarIcon)
+            }
         }
         coordinator.start()
         rebuildPresetMenu()
@@ -60,6 +71,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             button.image = StatusBarIcon.make()
             button.toolTip = "Anchor — 桅杆上的瞭望员"
         }
+        // 菜单栏太挤的人可隐藏图标——岛右键即是完整入口，不会因此失去操作能力。
+        item.isVisible = !UserDefaults.standard.bool(forKey: SettingsKey.hideMenuBarIcon)
         let menu = NSMenu()
         menu.autoenablesItems = false // 收编项的可用性由 menuNeedsUpdate 手动控制
 

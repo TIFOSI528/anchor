@@ -54,9 +54,10 @@ struct IslandFormContent: View {
                     if value.translation.height < -30 { model.onSwipeUp() }
                 }
             )
+            .overlay(RightClickCatcher { model.onSecondaryClick() }) // 右键=完整菜单
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
-            .accessibilityHint("单击拉回（⌃⌥⌘A）· 长按 3 秒合法摸鱼（⌃⌥⌘B）· 上划暂停（⌃⌥⌘P）")
+            .accessibilityHint("单击拉回 · 长按 3 秒合法摸鱼 · 上划暂停 · 右键打开菜单")
     }
 
     @ViewBuilder
@@ -141,8 +142,9 @@ struct IslandCompactDot: View {
             .frame(width: 18, height: 14) // 命中区比 8pt 圆点大一圈
             .contentShape(Rectangle())
             .onTapGesture { model.onDotTap() }
+            .overlay(RightClickCatcher { model.onSecondaryClick() })
             .accessibilityLabel(accessibilityText)
-            .accessibilityHint("点击打开 Anchor 菜单")
+            .accessibilityHint("点击或右键打开 Anchor 菜单")
     }
 
     private var accessibilityText: String {
@@ -246,5 +248,38 @@ extension Color {
             green: Double((hex >> 8) & 0xFF) / 255,
             blue: Double(hex & 0xFF) / 255
         )
+    }
+}
+
+/// 透明覆盖层：**只捕获右键**，左键/长按/拖拽全部穿透给底下的 SwiftUI 手势。
+/// 用 hitTest 按当前事件类型决定认不认领——右键才返回自己，否则返回 nil 放行。
+struct RightClickCatcher: NSViewRepresentable {
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> RightClickView {
+        let view = RightClickView()
+        view.onRightClick = action
+        return view
+    }
+
+    func updateNSView(_ view: RightClickView, context: Context) {
+        view.onRightClick = action
+    }
+}
+
+final class RightClickView: NSView {
+    var onRightClick: () -> Void = {}
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        switch NSApp.currentEvent?.type {
+        case .rightMouseDown, .rightMouseUp:
+            return self          // 认领右键
+        default:
+            return nil           // 其余事件穿透到下层 SwiftUI
+        }
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick()
     }
 }

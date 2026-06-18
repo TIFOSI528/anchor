@@ -28,6 +28,7 @@ struct GeneralSettingsView: View {
     @AppStorage(SettingsKey.islandPosition) private var islandPosition = IslandPosition.auto.rawValue
     @AppStorage(SettingsKey.hapticsEnabled) private var hapticsEnabled = true
     @AppStorage(SettingsKey.hotkeysEnabled) private var hotkeysEnabled = true
+    @AppStorage(SettingsKey.hideMenuBarIcon) private var hideMenuBarIcon = false
     @AppStorage(SettingsKey.autoUpdateEnabled) private var autoUpdate = false
     @AppStorage(SettingsKey.extensionConnected) private var extensionConnected = false
 
@@ -47,6 +48,13 @@ struct GeneralSettingsView: View {
                 Toggle("手势触感反馈", isOn: $hapticsEnabled)
                 Toggle("全局快捷键（⌃⌥⌘ A/B/L/P）", isOn: $hotkeysEnabled)
                 Text("与其它应用冲突时可整体关闭（重启生效）；菜单与岛上入口不受影响。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Toggle("隐藏菜单栏图标", isOn: $hideMenuBarIcon)
+                    .onChange(of: hideMenuBarIcon) { _, _ in
+                        NotificationCenter.default.post(name: .anchorMenuBarIconChanged, object: nil)
+                    }
+                Text("菜单栏太挤可关掉图标——左键绿点、或在任何状态右键灵动岛，都能打开完整菜单。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Toggle("自动检查更新", isOn: $autoUpdate)
@@ -299,12 +307,18 @@ struct AboutSettingsView: View {
     }
 }
 
+extension Notification.Name {
+    /// 「隐藏菜单栏图标」开关变化 → AppDelegate 即时同步 statusItem.isVisible。
+    static let anchorMenuBarIconChanged = Notification.Name("anchor.menuBarIconChanged")
+}
+
 /// UserDefaults 键名集中管理。
 enum SettingsKey {
     static let launchAtLogin = "anchor.launchAtLogin"
     static let islandPosition = "anchor.islandPosition"
     static let hapticsEnabled = "anchor.hapticsEnabled"
     static let hotkeysEnabled = "anchor.hotkeysEnabled"
+    static let hideMenuBarIcon = "anchor.hideMenuBarIcon"
     static let frictionEnabled = "anchor.frictionEnabled"
     static let seriousMode = "anchor.seriousMode"
     static let reduceFriction = "anchor.reduceFriction"

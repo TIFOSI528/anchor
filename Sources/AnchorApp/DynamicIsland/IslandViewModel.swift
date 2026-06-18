@@ -34,6 +34,8 @@ final class IslandViewModel: ObservableObject {
     var onSwipeUp: () -> Void = {}
     /// 绿区休眠点被点击（刘海模式下作为菜单入口的兜底）。
     var onDotTap: () -> Void = {}
+    /// 任何状态右键岛 → 弹完整 Anchor 菜单（不依赖菜单栏图标、不用快捷键）。
+    var onSecondaryClick: () -> Void = {}
 
     private var hintTask: Task<Void, Never>?
 
