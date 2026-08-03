@@ -64,7 +64,9 @@ Requires macOS 14+ / Xcode 16+ / Swift 6.0+. Dev loop: `open Package.swift`; tes
 
 ## Quick start
 
-1. Launch: an **anchor icon** appears in the menu bar, and a **breathing green dot** sits at the top-center of your screen
+A four-step guide runs on first launch — it explains the three zones, the escape hatch, the extension and the shortcut permission (re-open any time from the menu bar → **Getting Started**). After that:
+
+1. An **anchor icon** appears in the menu bar; once you're in a working app, a **breathing green dot** sits at the top of your screen
 2. Menu bar → **Scenes** → pick one (built-in *Coding / Reading / Browsing*; rules are editable with `*` wildcards)
 3. Switch to an unrelated app — the dot expands into a countdown capsule; **click it** to snap back to work
 4. Want to blocklist something the moment you drift into it? Menu bar → **"Add current app / site to red zone"** — effective immediately
@@ -86,7 +88,13 @@ Requires macOS 14+ / Xcode 16+ / Swift 6.0+. Dev loop: `open Package.swift`; tes
 | Browser tab rules | Extension (talks only to `127.0.0.1`, never the network) |
 | Global hotkeys, scroll lock (off by default) | Accessibility (optional; degrades silently if not granted) |
 
-All data stays in SQLite under `~/Library/Application Support/Anchor/` — no account, no cloud, no telemetry. *Why not the Mac App Store?* Sandboxing would kill the foreground watch that the whole product stands on, so Anchor ships as a notarized direct download.
+All data stays in SQLite under `~/Library/Application Support/Anchor/` (mode `0600`, owner-only) — no account, no cloud, no telemetry. **URLs are stored as host + path only; anything after `?` is discarded before it reaches disk**, so search terms and share tokens never land in the database. Settings → Privacy & Data lets you export everything, erase all history, and set a retention window.
+
+The one network request is the **update check**, which is off by default: when enabled or triggered manually it makes an HTTPS request to `raw.githubusercontent.com`, disclosing your IP address and Anchor version to GitHub. Nothing else leaves the machine — full details in [PRIVACY.md](PRIVACY.md).
+
+> **Language:** the interface follows your system language — English and Simplified Chinese are both fully localized. To force one, use System Settings → General → Language & Region → Applications.
+
+*Why not the Mac App Store?* Sandboxing would kill the foreground watch that the whole product stands on, so Anchor ships as a notarized direct download.
 
 ## Design stances
 

@@ -20,11 +20,31 @@ jobs:
       - name: Swift version
         run: swift --version
 
-      - name: Build
-        run: swift build -v
+      # 本地化查表失败是**静默**的（回落到 key，不报错），所以少一条翻译在运行时
+      # 只表现为界面上出现 `settings.general.xxx`。把它变成 CI 硬错误。
+      - name: Validate localizations
+        run: python3 scripts/build-localizations.py --check
+
+      # 仓库一直宣称"Swift 6 严格并发零警告"——让 CI 真的守住这条，
+      # 而不是靠人肉记得看日志。
+      - name: Build (warnings are errors)
+        run: swift build -Xswiftc -warnings-as-errors
 
       - name: Test
-        run: swift test -v
+        run: swift test
+
+      # 打包脚本此前只在打 tag 时才跑，脚本一坏要等到发版当天才发现。
+      - name: Package smoke test
+        run: ANCHOR_DMG=0 zsh scripts/package-app.sh
+
+      - name: Verify app launches and shuts down cleanly
+        run: |
+          open output/Anchor.app
+          sleep 8
+          pgrep -f "output/Anchor.app" > /dev/null || { echo "app did not stay running"; exit 1; }
+          osascript -e 'tell application "Anchor" to quit' || pkill -f "output/Anchor.app"
+          sleep 2
+          echo "launch smoke test passed"
 
   lint:
     name: SwiftFormat (lint)

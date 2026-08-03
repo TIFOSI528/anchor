@@ -97,7 +97,7 @@
 - [ ] 长按 3s → SideEffect.enterSlacking(5min)
 - [ ] 向上 swipe → SideEffect.pauseSession + 弹输入框
 - [ ] 触感反馈（NSHapticFeedbackPerformer）
-- [ ] 键盘快捷键等效（⌥⌘A / B / P）
+- [ ] 键盘快捷键等效（⌃⌥⌘A / B / L / P）
 
 ### PR #12：snap back 实现
 - [ ] LastGreenAppTracker：维护一个"最近 5 个绿区 app"栈

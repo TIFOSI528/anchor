@@ -4,7 +4,6 @@
 *.xcodeproj/
 *.xcworkspace/
 DerivedData/
-Package.resolved
 
 # macOS
 .DS_Store
@@ -16,9 +15,6 @@ output/
 *.app/
 *.zip
 
-# Anchor runtime data
-~/.anchor/
-anchor.sock
 
 # Logs
 *.log

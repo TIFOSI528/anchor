@@ -152,7 +152,7 @@ NSWorkspace.shared.notificationCenter.addObserver(
 
 ## 七、Accessibility（不忘掉的少数人）
 
-- 所有手势必须有键盘等效：`⌥⌘A` = tap、`⌥⌘B` = 摸鱼、`⌥⌘P` = pause
+- 所有手势必须有键盘等效：`⌃⌥⌘A` = tap、`⌃⌥⌘B` = 摸鱼、`⌃⌥⌘P` = pause
 - 所有视觉状态必须有 VoiceOver label
 - FrictionFog 必须可关闭（Settings → Accessibility → 减少屏幕变化）
 

@@ -45,6 +45,21 @@ for bundle in "$BIN_DIR"/*.bundle(N); do
   ditto "$bundle" "$RES_DIR/${bundle:t}"
 done
 
+# 本地化表。刻意放在 Sources/ 之外：SwiftPM 会把 target 资源塞进
+# Anchor_<Target>.bundle，而 SwiftUI 的字面量查的是 Bundle.main——对不上就会
+# "翻译全做了、界面还是原语言"。直接拷进 Contents/Resources 让 Bundle.main 命中。
+#
+# 先从 fragments 重新生成一次：漏生成的表会静默回落成 key（界面上出现
+# `settings.general.xxx`），绝不能靠"记得手动跑脚本"来避免。
+if command -v python3 >/dev/null 2>&1; then
+  python3 "$PROJECT_ROOT/scripts/build-localizations.py" >/dev/null
+fi
+if [[ -d "$PROJECT_ROOT/Resources/Localizations" ]]; then
+  for lproj in "$PROJECT_ROOT"/Resources/Localizations/*.lproj(N); do
+    ditto "$lproj" "$RES_DIR/${lproj:t}"
+  done
+fi
+
 # 品牌资源。
 if [[ -d "$PROJECT_ROOT/Assets/Brand" ]]; then
   ditto "$PROJECT_ROOT/Assets/Brand" "$RES_DIR/Brand"
@@ -81,15 +96,25 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 	<key>CFBundleVersion</key>         <string>${VERSION}</string>
 	<key>LSMinimumSystemVersion</key>  <string>14.0</string>
 	<key>NSPrincipalClass</key>        <string>NSApplication</string>
+	<key>CFBundleDevelopmentRegion</key> <string>en</string>
+	<!-- 声明支持的语言，系统「语言与地区 → 应用程序」才能单独给 Anchor 选语言。 -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hans</string>
+	</array>
 	<key>NSHighResolutionCapable</key> <true/>
 	<!-- menu-bar / overlay app：不在 Dock 显示图标、无主窗口。 -->
 	<key>LSUIElement</key>             <true/>
 	<key>CFBundleIconFile</key>        <string>AppIcon</string>
 	<key>NSHumanReadableCopyright</key> <string>© 2026 Anchor. GPL-3.0.</string>
-	<key>NSAppleEventsUsageDescription</key> <string>Anchor 需要读取浏览器当前标签页地址，来判断你在绿区还是漂移。</string>
-	<!-- Sparkle 自动更新。feed 上线前 SUEnableAutomaticChecks 保持 false（用户可在 Settings 打开）。 -->
+	<!--
+	  Sparkle 自动更新。刻意**不写** SUEnableAutomaticChecks：
+	  把它钉成 false 会连带压掉 Sparkle 自己的首次征询弹窗，结果是绝大多数用户
+	  永远收不到更新——安全修复也送不出去。留空则由 Sparkle 在首次启动时
+	  正常询问一次"是否自动检查更新"，把选择权交给用户（也正是隐私立场要的知情同意）。
+	-->
 	<key>SUFeedURL</key>               <string>${ANCHOR_APPCAST_URL:-https://example.invalid/anchor/appcast.xml}</string>
-	<key>SUEnableAutomaticChecks</key> <false/>
 	<key>SUPublicEDKey</key>           <string>${ANCHOR_SPARKLE_PUBLIC_KEY:-eSu0nsFWgzHoc2PK4f9GyUy0pvOVVfITU9/uYgb3oB8=}</string>
 </dict>
 </plist>
