@@ -26,10 +26,15 @@ public final class SessionStore: @unchecked Sendable {
         case let .file(path):
             db = try Connection(path)
             try db.run("PRAGMA journal_mode = WAL")
+            // 库里是完整的注意力轨迹，默认 0644 意味着同机其它用户能直接读走。
+            Self.restrictPermissions(at: path)
         case .memory:
             db = try Connection(.inMemory)
         }
         try db.run("PRAGMA foreign_keys = ON")
+        // 第二个实例（已装的 app + swift run，或 Sparkle 更新期间的重启重叠）会让写锁竞争，
+        // 没有 busy_timeout 时直接 SQLITE_BUSY 抛错 → 整个持久化静默失效。
+        try db.run("PRAGMA busy_timeout = 5000")
         try runMigrations()
     }
 
@@ -39,18 +44,65 @@ public final class SessionStore: @unchecked Sendable {
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first ?? URL(fileURLWithPath: NSTemporaryDirectory())
         let dir = base.appendingPathComponent("Anchor", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(
+            at: dir,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         return dir.appendingPathComponent("anchor.sqlite").path
+    }
+
+    /// 把库文件（含 WAL / SHM 旁文件）收成仅本人可读写；目录收成 0700。
+    /// 每次启动都执行——老安装升级上来也会被就地修正。
+    private static func restrictPermissions(at path: String) {
+        let manager = FileManager.default
+        for suffix in ["", "-wal", "-shm"] {
+            let target = path + suffix
+            guard manager.fileExists(atPath: target) else { continue }
+            try? manager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target)
+        }
+        let dir = (path as NSString).deletingLastPathComponent
+        try? manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir)
+    }
+
+    /// 落库前的 URL 脱敏：**只保留 scheme + host + path，丢掉 query 与 fragment**。
+    ///
+    /// 分区判定用的是内存里的完整 URL，所以这里的裁剪不影响绿/灰/红判定；
+    /// 但写进磁盘的历史记录不该留 `?token=…`、`?q=…`（搜索词）、重置密码链接这类东西——
+    /// 「数据不离开这台电脑」不等于「什么都可以往磁盘上记」。
+    public static func sanitizeURLForStorage(_ raw: String?) -> String? {
+        guard let raw, !raw.isEmpty else { return raw }
+        // 逐字符找最早出现的分隔符即可，不依赖 URL 解析（脏 URL 也要能裁）。
+        let cut = raw.firstIndex { $0 == "?" || $0 == "#" }
+        guard let cut else { return raw }
+        return String(raw[raw.startIndex..<cut])
     }
 
     // MARK: - migrations
 
+    /// 迁移必须是**原子**的：DDL + 版本号一起提交。
+    ///
+    /// 否则「建完表但还没写 user_version」时被杀掉，下次启动会重跑 `CREATE TABLE`
+    /// → "table already exists" → init 抛错 → `try? SessionStore()` 变成 nil
+    /// → 从此静默不落盘（规则存不住、复盘永远"今天还没有数据"），
+    /// 只能手动删库才能恢复。
+    ///
+    /// 注意 `VACUUM` 不能在事务里跑，所以 v2 的回溯脱敏与 VACUUM 分开执行。
     private func runMigrations() throws {
         if try userVersion() < 1 {
-            try db.execute(Self.migration1)
-            try setUserVersion(1)
+            try db.transaction {
+                try db.execute(Self.migration1)
+                try setUserVersion(1)
+            }
         }
-        // 未来：if try userVersion() < 2 { ... ; try setUserVersion(2) }
+        if try userVersion() < 2 {
+            try db.transaction {
+                try db.execute(Self.migration2)
+                try setUserVersion(2)
+            }
+            try db.execute("VACUUM") // 让被裁掉的 query string 不再残留在空闲页里
+        }
+        // 未来：if try userVersion() < 3 { try db.transaction { ... } }
     }
 
     private func userVersion() throws -> Int {
@@ -106,6 +158,18 @@ public final class SessionStore: @unchecked Sendable {
     CREATE INDEX idx_drifts_time ON drifts(occurred_at);
     """
 
+    /// v2：
+    /// 1. `sessions.started_at` 补索引——复盘按时间区间查 session，之前是全表扫。
+    /// 2. **回溯脱敏**：老版本把完整 URL（含 `?query`）写进了库，升级时就地裁掉，
+    ///    不让历史遗留数据继续躺在磁盘上（见 `sanitizeURLForStorage`）。
+    private static let migration2 = """
+    CREATE INDEX IF NOT EXISTS idx_sessions_time ON sessions(started_at);
+    UPDATE drifts SET to_url   = substr(to_url,   1, instr(to_url,   '?') - 1) WHERE instr(to_url,   '?') > 0;
+    UPDATE drifts SET from_url = substr(from_url, 1, instr(from_url, '?') - 1) WHERE instr(from_url, '?') > 0;
+    UPDATE drifts SET to_url   = substr(to_url,   1, instr(to_url,   '#') - 1) WHERE instr(to_url,   '#') > 0;
+    UPDATE drifts SET from_url = substr(from_url, 1, instr(from_url, '#') - 1) WHERE instr(from_url, '#') > 0;
+    """
+
     // MARK: - sessions
 
     public func upsertSession(_ s: SessionRecord) throws {
@@ -157,7 +221,8 @@ public final class SessionStore: @unchecked Sendable {
              duration_seconds, end_reason, next_destination)
             VALUES (?,?,?,?,?,?,?,?,?,?)
             """,
-            d.id, d.sessionId, epoch(d.occurredAt), d.fromApp, d.fromURL, d.toApp, d.toURL,
+            d.id, d.sessionId, epoch(d.occurredAt), d.fromApp,
+            Self.sanitizeURLForStorage(d.fromURL), d.toApp, Self.sanitizeURLForStorage(d.toURL),
             d.durationSeconds.map(Int64.init), d.endReason?.rawValue, d.nextDestination
         )
     }
@@ -215,6 +280,91 @@ public final class SessionStore: @unchecked Sendable {
             return Self.mapRecap(row)
         }
         return nil
+    }
+
+    // MARK: - 数据留存 / 导出 / 清除（用户对自己数据的控制权）
+
+    /// 默认留存天数。专注复盘的价值窗口是「最近几个月」，不是「永久」——
+    /// 无上限增长既是隐私负担也是性能负担。
+    public static let defaultRetentionDays = 90
+
+    /// 删除早于 `days` 天的漂移与 session（已结束的）。返回删除的行数。
+    /// `days <= 0` 视为"不限制"，直接返回 0。
+    @discardableResult
+    public func prune(olderThanDays days: Int, now: Date = Date()) throws -> Int {
+        guard days > 0 else { return 0 }
+        let cutoff = epoch(now.addingTimeInterval(-Double(days) * 86_400))
+        // 顺序很重要：`PRAGMA foreign_keys = ON` 下先删父行会违反外键。
+        // 而且崩溃恢复写回的 ended_at 可能**早于**该 session 自己的漂移记录
+        // （见 recoverCrashedSessionIfAny），所以不能只按时间删 drifts——
+        // 必须把即将删掉的 session 的子行一并清掉。
+        try db.run(
+            """
+            DELETE FROM drifts
+            WHERE occurred_at < ?
+               OR session_id IN (
+                    SELECT id FROM sessions WHERE ended_at IS NOT NULL AND ended_at < ?
+               )
+            """,
+            cutoff, cutoff
+        )
+        let driftsDeleted = db.changes
+        try db.run("DELETE FROM sessions WHERE ended_at IS NOT NULL AND ended_at < ?", cutoff)
+        let sessionsDeleted = db.changes
+        try db.run("DELETE FROM daily_recaps WHERE generated_at < ?", cutoff)
+        let recapsDeleted = db.changes
+        return driftsDeleted + sessionsDeleted + recapsDeleted
+    }
+
+    /// 把全部数据导成 JSON（用户可带走 / 自行检查记录了什么）。
+    /// preset 规则也含在内，方便换机迁移。
+    public func exportJSON(now: Date = Date()) throws -> Data {
+        let allSessions = try db.prepare("SELECT \(Self.sessionCols) FROM sessions ORDER BY started_at")
+            .map(Self.mapSession)
+        let allDrifts = try db.prepare("SELECT \(Self.driftCols) FROM drifts ORDER BY occurred_at")
+            .map(Self.mapDrift)
+        let allPresets = try presets()
+        let formatter = ISO8601DateFormatter()
+
+        let payload: [String: Any] = [
+            "exported_at": formatter.string(from: now),
+            "schema_version": try userVersion(),
+            "note": "Anchor local export. URLs are stored without query strings or fragments.",
+            "sessions": allSessions.map { s -> [String: Any] in
+                [
+                    "id": s.id, "preset_id": s.presetId,
+                    "started_at": formatter.string(from: s.startedAt),
+                    "ended_at": s.endedAt.map(formatter.string(from:)) ?? NSNull(),
+                    "green_seconds": s.greenSeconds, "gray_seconds": s.graySeconds,
+                    "red_seconds": s.redSeconds, "drift_count": s.driftCount,
+                    "longest_streak_seconds": s.longestStreakSeconds, "deep_score": s.deepScore,
+                ]
+            },
+            "drifts": allDrifts.map { d -> [String: Any] in
+                [
+                    "id": d.id, "session_id": d.sessionId,
+                    "occurred_at": formatter.string(from: d.occurredAt),
+                    "from_app": d.fromApp ?? NSNull(), "from_url": d.fromURL ?? NSNull(),
+                    "to_app": d.toApp, "to_url": d.toURL ?? NSNull(),
+                    "duration_seconds": d.durationSeconds ?? NSNull(),
+                    "end_reason": d.endReason?.rawValue ?? NSNull(),
+                ]
+            },
+            "presets": allPresets.map { p -> [String: Any] in
+                ["id": p.id, "name": p.name, "rules_json": p.rulesJSON,
+                 "drift_threshold_seconds": p.driftThresholdSeconds]
+            },
+        ]
+        return try JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys])
+    }
+
+    /// 清空全部历史（session / drift / 复盘）。**保留 preset 规则**——
+    /// 用户要抹掉的是"被记录的行为"，不是自己配好的场景。
+    public func wipeHistory() throws {
+        try db.run("DELETE FROM drifts")
+        try db.run("DELETE FROM sessions")
+        try db.run("DELETE FROM daily_recaps")
+        try db.run("VACUUM")
     }
 
     // MARK: - row mapping
