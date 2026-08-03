@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import AnchorCore
 
 /// 自管 NSWindow 承载 SwiftUI `SettingsView`。
 ///
@@ -13,7 +14,7 @@ final class SettingsWindowController: NSWindowController {
             rootView: SettingsView(library: coordinator.presetLibrary, coordinator: coordinator)
         )
         let window = NSWindow(contentViewController: hosting)
-        window.title = "Anchor 设置"
+        window.title = L("settings.window.title")
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.setContentSize(NSSize(width: 520, height: 440))
         window.isReleasedWhenClosed = false

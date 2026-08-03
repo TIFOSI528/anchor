@@ -1,0 +1,48 @@
+/* Anchor — 灵动岛 / 手势提示 / 弹窗（简体中文，原文）。
+   对应源文件：Sources/AnchorApp/AppCoordinator.swift、
+               Sources/AnchorApp/DynamicIsland/IslandViews.swift
+   key 与 island.en.strings 完全一致并按同一顺序排列，只翻译右侧。
+   合并进 zh-Hans.lproj/Localizable.strings。 */
+
+"alert.slack_extend.back_to_work" = "回去工作";
+"alert.slack_extend.extend" = "再来 %1$lld 分钟";
+"alert.slack_extend.message" = "还要 %1$lld 分钟吗？（今天还剩 %2$lld 次温柔提醒）";
+"alert.slack_extend.title" = "%1$lld 分钟到了";
+"alert.weekly_suggestion.apply" = "应用";
+/* %1$@ = 建议正文，%2$@ = 依据的数据。 */
+"alert.weekly_suggestion.body" = "%1$@\n\n依据：%2$@";
+"alert.weekly_suggestion.skip" = "这周先不用";
+"alert.weekly_suggestion.title" = "本周建议";
+"error.local_database_unavailable" = "本地数据库不可用。";
+"hint.added_to_green" = "已加入绿区：%1$@";
+"hint.added_to_red" = "已加入红区：%1$@";
+"hint.locked" = "已锁定：%1$@";
+"hint.moved_to_gray" = "已移回灰区：%1$@";
+"hint.no_capture_target" = "当前没有可收编的对象";
+"hint.no_lock_target" = "当前没有可锁定的对象";
+"hint.no_snapback_target" = "暂无可拉回的目标，请先访问绿区 app";
+"hint.recap_ready" = "今日复盘好了，点菜单栏查看";
+"hint.resumed" = "已恢复看护";
+"hint.rhythm_suggestion" = "可在设置里给 %1$@ 启用更严格的场景";
+/* %1$lld = 本次可摸鱼分钟数，%2$lld = 今天第几次（含本次）。 */
+"hint.slack_started" = "合法摸鱼 %1$lld 分钟（今天第 %2$lld 次）";
+/* %1$lld = 今天第几次（含本次）。已过软上限，到点自动收尾。 */
+"hint.slack_started_hard" = "今天第 %1$lld 次摸鱼（已到硬上限，到点强制拉回）";
+"hint.unlocked" = "已解除锁定";
+/* %1$@ = 已漂移时长，%2$@ = 单击可回到哪里。 */
+"island.a11y.deepening" = "漂移加深，已 %1$@，可拉回 %2$@";
+"island.a11y.dot_hint" = "点击或右键打开 Anchor 菜单";
+"island.a11y.drifting" = "漂移中，已 %1$@";
+"island.a11y.gestures_hint" = "单击拉回 · 长按 3 秒合法摸鱼 · 上划暂停 · 右键打开菜单";
+"island.a11y.green" = "Anchor：绿区";
+"island.a11y.locked" = "Anchor：已锁定";
+"island.a11y.paused" = "Anchor：已暂停，点击恢复";
+"island.a11y.red" = "红区，已离开 %1$@";
+"island.a11y.slacking" = "合法摸鱼，剩余 %1$@";
+/* 不足一分钟的时长；一分钟以上走 m:ss 纯数字格式，不进表。 */
+"island.duration_seconds" = "%1$lld 秒";
+/* 红区胶囊文案。 */
+"island.red_away" = "立即拉回 · 已离开 %1$@";
+/* 没有具体 app 名时的兜底称呼。 */
+"island.snap_back_fallback" = "绿区";
+"island.snap_back_to" = "↩ 回到 %1$@";

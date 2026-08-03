@@ -12,10 +12,10 @@ public enum IslandPosition: String, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .auto: return "自动（有刘海用刘海，否则菜单栏嵌入）"
-        case .menuBar: return "菜单栏嵌入（宽度即内容，空闲点击穿透）"
-        case .notch: return "刘海（无刘海屏画人造刘海，会盖住中段图标）"
-        case .topCenter: return "顶部居中浮窗"
+        case .auto: return L("island.position.auto")
+        case .menuBar: return L("island.position.menu_bar")
+        case .notch: return L("island.position.notch")
+        case .topCenter: return L("island.position.top_center")
         }
     }
 }

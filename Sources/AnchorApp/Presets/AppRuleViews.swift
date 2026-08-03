@@ -8,7 +8,7 @@ struct AppChipsView: View {
 
     var body: some View {
         if bundleIds.isEmpty {
-            Text("还没有应用——从下方「正在运行的应用」点选，或用菜单栏一键收编。")
+            Text(L("apprule.empty_hint"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         } else {
@@ -26,7 +26,8 @@ struct AppChipsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("移除 \(AppIconProvider.displayName(forBundleId: bundleId))")
+                        .accessibilityLabel(L("apprule.remove_accessibility",
+                                              AppIconProvider.displayName(forBundleId: bundleId)))
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -54,10 +55,10 @@ struct RunningAppPicker: View {
                         Image(nsImage: AppIconProvider.icon(forBundleId: app.id))
                         Text(app.name).font(.callout).lineLimit(1)
                         Spacer()
-                        zoneButton("绿", active: greenIds.contains(app.id), tint: .green) {
+                        zoneButton(L("apprule.zone_green"), active: greenIds.contains(app.id), tint: .green) {
                             onCapture(app.id, greenIds.contains(app.id) ? .gray : .green)
                         }
-                        zoneButton("红", active: redIds.contains(app.id), tint: .red) {
+                        zoneButton(L("apprule.zone_red"), active: redIds.contains(app.id), tint: .red) {
                             onCapture(app.id, redIds.contains(app.id) ? .gray : .red)
                         }
                     }

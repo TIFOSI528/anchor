@@ -9,7 +9,7 @@ final class RecapWindowController: NSWindowController {
     convenience init(data: RecapData?) {
         let hosting = NSHostingController(rootView: RecapView(data: data))
         let window = NSWindow(contentViewController: hosting)
-        window.title = "今日复盘"
+        window.title = L("window.recap.title")
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
         window.center()

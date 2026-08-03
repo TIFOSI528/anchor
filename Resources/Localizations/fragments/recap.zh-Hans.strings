@@ -1,0 +1,85 @@
+/* 今日复盘 + 菜单栏状态 + 周建议 + 内置场景名。
+   对应代码：Sources/AnchorApp/Recap/{RecapView,RecapWindowController}.swift、
+             Sources/AnchorCore/State/StatusLabel.swift、
+             Sources/AnchorCore/Recap/{NarrativeGenerator,TopThieves,
+                                       SuggestionEngine,WeeklyAggregator}.swift、
+             Sources/AnchorCore/Preset/Preset.swift
+
+   语气：复盘是"朋友写给你的一封信"——温和、带点自嘲，绝不训人。
+   可以调侃，但不说教，也不暗示"你今天失败了"。
+
+   key 已排序。只用位置说明符，译者可以为语序重排参数而不必改代码。
+   数量说法一律与单复数无关，所以不需要 .stringsdict。
+   每个分支都是**一句完整的话**，不在代码里拼"词干 + 句号"。 */
+
+/* ---- 复盘信正文（NarrativeGenerator），一个 key 一整句 ---- */
+"narrative.p1.plain" = "今天你有 %1$@ 的真正专注，最长一段 %2$@（场景：%3$@）。";
+"narrative.p1.with_streak_range" = "今天你有 %1$@ 的真正专注，最长一段 %2$@（%3$@–%4$@）（场景：%5$@）。";
+"narrative.p2.scattered" = "漂出去 %1$lld 次，没有特别突出的去处——今天属于「无意识切换」型，不是被某个特定 app 吸住。";
+"narrative.p2.top_destination" = "漂出去 %1$lld 次，其中 %2$lld 次都去了 %3$@。";
+"narrative.p2.top_destination_streak" = "漂出去 %1$lld 次，其中 %2$lld 次都去了 %3$@ —— 连续第 %4$lld 天了。要加进黑名单吗？";
+"narrative.p3.hardest_window" = "%1$@ 是你今天最难稳住的时段，过去 7 天有 %2$lld 天也是。可能不是意志力，是节律。";
+
+/* ---- 内置场景名。持久化身份是 id（builtin.write-code …），
+        这里只是展示名，每次显示都重新查表。 ---- */
+"preset.builtin.casual" = "随便看看";
+"preset.builtin.read_docs" = "读资料";
+"preset.builtin.write_code" = "写代码";
+
+/* ---- 复盘窗口。duration.* 与复盘信共用，免得同一个「12 分钟」出现两种说法。
+        hour_column 是热力图一格（2 小时）的列标签（"8–10"）；
+        hour_range 是时段的显示文案，它的聚合 key 是另一个与语言无关的串。 ---- */
+"recap.chains.empty" = "本周还没有成型的漂移路径。";
+"recap.chains.summary" = "%1$lld 次 · 平均 %2$@";
+"recap.duration.hours" = "%1$lld 小时";
+"recap.duration.hours_minutes" = "%1$lld 小时 %2$lld 分钟";
+"recap.duration.minutes" = "%1$lld 分钟";
+"recap.duration.seconds" = "%1$lld 秒";
+"recap.empty.subtitle" = "开始专注后，今晚 22:00 在这里见。";
+"recap.empty.title" = "今天还没有数据";
+"recap.header.title" = "今日复盘 · %1$@";
+"recap.heatmap.hour_column" = "%1$lld–%2$lld";
+"recap.hour_range" = "%1$lld:00–%2$lld:00";
+"recap.legend.deep_green" = "深度绿区";
+"recap.legend.gray" = "灰区";
+"recap.legend.green" = "绿区";
+"recap.legend.red" = "红区";
+"recap.narrative.empty" = "今天没有足够的数据生成叙事。";
+"recap.section.chains" = "漂移链 Top 2";
+"recap.section.heatmap" = "本周漂移热力图（周一–周五 · 8–22 时）";
+"recap.section.thieves" = "今日罪人榜";
+"recap.section.timeline" = "24h 时间线";
+"recap.thieves.empty" = "今天没有时间小偷。";
+"recap.weekday.fri" = "五";
+"recap.weekday.mon" = "一";
+"recap.weekday.thu" = "四";
+"recap.weekday.tue" = "二";
+"recap.weekday.wed" = "三";
+
+/* ---- 菜单栏状态（StatusLabel）。时钟是整句里的参数，不是代码拼上去的后缀。 ---- */
+"status.drifting" = "漂移 %1$@";
+"status.green" = "绿区";
+"status.offline" = "待命";
+"status.paused" = "已暂停";
+"status.red" = "红区";
+"status.slacking" = "摸鱼 %1$@";
+
+/* ---- 周建议：先温和地问，再给出依据 ---- */
+"suggestion.blacklist.message" = "要不要把 %1$@ 加进「%2$@」的红区？";
+"suggestion.blacklist.rationale" = "它已连续 %1$lld 天进入你的漂移 Top 5。";
+"suggestion.preset_adjust.message" = "%1$@ 经常成为漂移起点，要不要把它从「%2$@」绿区移到灰区？";
+"suggestion.preset_adjust.rationale" = "本周它在绿区却触发了 %1$lld 次漂移。";
+"suggestion.rhythm.message" = "要不要在 %1$@ 启用更严格的 preset？";
+"suggestion.rhythm.rationale" = "你已连续 %1$lld 天在这个时段高频漂移。";
+
+/* ---- 罪人榜自嘲文案。转创而非直译：在目标语言里找一个语气对得上的说法。
+        永远是 6 条 —— 名次按下标取梗，条数变了每个名次拿到的梗都会错位。 ---- */
+"thief.snark.0" = "又赢了";
+"thief.snark.1" = "假装在学习";
+"thief.snark.2" = "摆烂";
+"thief.snark.3" = "意料之中";
+"thief.snark.4" = "今日 boss";
+"thief.snark.5" = "稳定输出";
+
+/* ---- 窗口标题 ---- */
+"window.recap.title" = "今日复盘";

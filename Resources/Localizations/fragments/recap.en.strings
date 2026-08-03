@@ -1,0 +1,90 @@
+/* Daily recap + menu-bar status + weekly suggestions + built-in scene names.
+   Source files: Sources/AnchorApp/Recap/{RecapView,RecapWindowController}.swift,
+                 Sources/AnchorCore/State/StatusLabel.swift,
+                 Sources/AnchorCore/Recap/{NarrativeGenerator,TopThieves,
+                                           SuggestionEngine,WeeklyAggregator}.swift,
+                 Sources/AnchorCore/Preset/Preset.swift
+
+   Voice: the recap is a letter from a friend — warm, wry, never scolding.
+   It may tease the reader; it never lectures, and never implies they failed.
+
+   Keys are sorted. Positional specifiers only, so a translator can reorder a
+   sentence without touching code. Counts are phrased count-neutrally on purpose
+   ("47 min", "day 5 in a row", "Today's drift count: 1"), so no plural forms and
+   no .stringsdict are needed. Every sentence is whole in the table — nothing is
+   assembled in code from a stem plus a trailing full stop. */
+
+/* ---- the letter itself (NarrativeGenerator). One key per complete sentence. ---- */
+"narrative.p1.plain" = "You got %1$@ of real focus today, and the longest single stretch ran %2$@. Preset: %3$@.";
+"narrative.p1.with_streak_range" = "You got %1$@ of real focus today, and the longest single stretch ran %2$@ (%3$@–%4$@). Preset: %5$@.";
+"narrative.p2.scattered" = "Today's drift count: %1$lld, with no clear favourite. This was the absent-minded kind of switching, not one app holding you hostage.";
+"narrative.p2.top_destination" = "Today's drift count: %1$lld — and %2$lld of them landed on %3$@.";
+"narrative.p2.top_destination_streak" = "Today's drift count: %1$lld — and %2$lld of them landed on %3$@. That's day %4$lld in a row. Shall we put it on the red list?";
+"narrative.p3.hardest_window" = "%1$@ was the hardest stretch to hold today, and it has been on %2$lld of the last 7 days. That may be your rhythm talking, not your willpower.";
+
+/* ---- built-in scene names. The persisted identity is the id (builtin.write-code …);
+        these are display names only, looked up again every time they are shown. ---- */
+"preset.builtin.casual" = "Just browsing";
+"preset.builtin.read_docs" = "Reading";
+"preset.builtin.write_code" = "Writing code";
+
+/* ---- recap window. duration.* is shared with the letter so the same twelve
+        minutes never gets two different wordings. hour_column labels one 2h
+        heatmap column ("8–10"); hour_range is the readable form of a window
+        whose aggregation key is a separate, locale-independent string. ---- */
+"recap.chains.empty" = "No drift path has taken shape this week yet.";
+"recap.chains.summary" = "×%1$lld · %2$@ on average";
+"recap.duration.hours" = "%1$lld hr";
+"recap.duration.hours_minutes" = "%1$lld hr %2$lld min";
+"recap.duration.minutes" = "%1$lld min";
+"recap.duration.seconds" = "%1$lld sec";
+"recap.empty.subtitle" = "Start a focus session and I'll see you back here at 22:00.";
+"recap.empty.title" = "Nothing here yet today";
+"recap.header.title" = "Today's recap · %1$@";
+"recap.heatmap.hour_column" = "%1$lld–%2$lld";
+"recap.hour_range" = "%1$lld:00–%2$lld:00";
+"recap.legend.deep_green" = "Deep green";
+"recap.legend.gray" = "Gray";
+"recap.legend.green" = "Green";
+"recap.legend.red" = "Red";
+"recap.narrative.empty" = "Not enough happened today to write you a proper letter.";
+"recap.section.chains" = "Top 2 drift chains";
+"recap.section.heatmap" = "Drift heatmap this week (Mon–Fri · 8:00–22:00)";
+"recap.section.thieves" = "Today's time thieves";
+"recap.section.timeline" = "24-hour timeline";
+"recap.thieves.empty" = "No time thieves today.";
+"recap.weekday.fri" = "Fr";
+"recap.weekday.mon" = "Mo";
+"recap.weekday.thu" = "Th";
+"recap.weekday.tue" = "Tu";
+"recap.weekday.wed" = "We";
+
+/* ---- menu-bar status line (StatusLabel). The clock is a whole-sentence
+        argument, not a suffix glued on in code. ---- */
+"status.drifting" = "Drifting %1$@";
+"status.green" = "Green zone";
+"status.offline" = "Standing by";
+"status.paused" = "Paused";
+"status.red" = "Red zone";
+"status.slacking" = "Slacking %1$@";
+
+/* ---- weekly suggestion: a warm ask, then the receipt that explains it ---- */
+"suggestion.blacklist.message" = "Shall we put %1$@ in the red zone for “%2$@”?";
+"suggestion.blacklist.rationale" = "That's day %1$lld in a row in your drift top 5.";
+"suggestion.preset_adjust.message" = "%1$@ keeps being where the drifting starts. Shall we move it out of the green zone in “%2$@” and back to gray?";
+"suggestion.preset_adjust.rationale" = "Drifts it kicked off from the green zone this week: %1$lld.";
+"suggestion.rhythm.message" = "Shall we switch to a stricter preset around %1$@?";
+"suggestion.rhythm.rationale" = "That's day %1$lld in a row of heavy drifting in this window.";
+
+/* ---- time thief snark. Transcreate, don't translate: find a phrase with the same
+        teasing-but-kind tone. There are always exactly six — rank picks by index,
+        so a language with a different number of jokes would shift every rank. ---- */
+"thief.snark.0" = "undefeated";
+"thief.snark.1" = "research, technically";
+"thief.snark.2" = "gave up trying";
+"thief.snark.3" = "no surprises here";
+"thief.snark.4" = "today's final boss";
+"thief.snark.5" = "reliable as ever";
+
+/* ---- window titles ---- */
+"window.recap.title" = "Today's Recap";

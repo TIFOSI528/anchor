@@ -1,0 +1,51 @@
+/* Anchor — dynamic island, gesture hints, alerts (English).
+   Source files: Sources/AnchorApp/AppCoordinator.swift,
+                 Sources/AnchorApp/DynamicIsland/IslandViews.swift
+   Keys are semantic (area.subarea.meaning) and sorted. Positional specifiers only,
+   so translators can reorder without touching code. Counts are phrased
+   count-neutrally on purpose — no ordinals, no plural forms, no .stringsdict.
+   Merge into en.lproj/Localizable.strings. */
+
+"alert.slack_extend.back_to_work" = "Back to Work";
+"alert.slack_extend.extend" = "%1$lld More Minutes";
+"alert.slack_extend.message" = "Another %1$lld minutes? (%2$lld gentle nudges left today)";
+"alert.slack_extend.title" = "Your %1$lld minutes are up";
+"alert.weekly_suggestion.apply" = "Apply";
+/* %1$@ = the suggestion, %2$@ = the data it is based on. */
+"alert.weekly_suggestion.body" = "%1$@\n\nWhy: %2$@";
+"alert.weekly_suggestion.skip" = "Not This Week";
+"alert.weekly_suggestion.title" = "This week's suggestion";
+"error.local_database_unavailable" = "The local database isn't available.";
+"hint.added_to_green" = "Added to the green zone: %1$@";
+"hint.added_to_red" = "Added to the red zone: %1$@";
+"hint.locked" = "Focus Lock on: %1$@";
+"hint.moved_to_gray" = "Moved back to the gray zone: %1$@";
+"hint.no_capture_target" = "Nothing here to add";
+"hint.no_lock_target" = "Nothing here to lock on to";
+"hint.no_snapback_target" = "Nothing to snap back to yet — open a green-zone app first";
+"hint.recap_ready" = "Today's recap is ready — open it from the menu bar";
+"hint.resumed" = "Watch resumed";
+"hint.rhythm_suggestion" = "You can switch %1$@ to a stricter scene in Settings";
+/* %1$lld = minutes granted, %2$lld = how many breaks today (this one included). */
+"hint.slack_started" = "Sanctioned break, %1$lld minutes (break %2$lld today)";
+/* %1$lld = how many breaks today (this one included). Past the soft limit, so it
+   ends by itself — say so plainly, without scolding. */
+"hint.slack_started_hard" = "Break %1$lld today · past today's limit, so you'll be snapped back when it ends";
+"hint.unlocked" = "Focus Lock released";
+/* %1$@ = elapsed time, %2$@ = where a click would take you. */
+"island.a11y.deepening" = "Drifting for %1$@ · tap to go back to %2$@";
+"island.a11y.dot_hint" = "Click or right-click to open the Anchor menu";
+"island.a11y.drifting" = "Drifting for %1$@";
+"island.a11y.gestures_hint" = "Click to snap back · hold 3 seconds for a sanctioned break · swipe up to pause · right-click for the menu";
+"island.a11y.green" = "Anchor: green zone";
+"island.a11y.locked" = "Anchor: Focus Lock on";
+"island.a11y.paused" = "Anchor: paused, click to resume";
+"island.a11y.red" = "Red zone · away for %1$@";
+"island.a11y.slacking" = "Sanctioned break · %1$@ left";
+/* Sub-minute durations; a minute or more shows as m:ss, which needs no translation. */
+"island.duration_seconds" = "%1$lld s";
+/* Red zone capsule. An invitation, not an order. */
+"island.red_away" = "Away for %1$@ · tap to go back";
+/* Stands in for the app name when there is nothing specific to name. */
+"island.snap_back_fallback" = "work";
+"island.snap_back_to" = "↩ Back to %1$@";

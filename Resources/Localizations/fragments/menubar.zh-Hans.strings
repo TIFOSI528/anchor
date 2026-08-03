@@ -1,0 +1,45 @@
+/* Anchor — 菜单栏 / 状态项 / 暂停理由弹窗（简体中文）。
+   对应源文件：Sources/AnchorApp/{AppDelegate,PauseReasonPrompt,StatusBarIcon}.swift
+   key 与 menubar.en.strings 完全一致、同序，只翻译右侧。占位符用位置化写法，
+   语序可自由调整。合并进 zh-Hans.lproj/Localizable.strings。 */
+
+"alert.no_update_feed.message" = "你运行的是开发版或自行构建的版本。要获取更新，请到项目发布页下载正式版。";
+"alert.no_update_feed.ok" = "好";
+"alert.no_update_feed.open_releases" = "打开发布页";
+"alert.no_update_feed.title" = "这个版本不会自动检查更新";
+"menu.capture.gray_generic" = "移回灰区";
+"menu.capture.gray_named" = "把「%1$@」移回灰区";
+"menu.capture.green_generic" = "把当前 app 加入绿区";
+"menu.capture.green_named" = "把「%1$@」加入绿区%2$@";
+"menu.capture.red_generic" = "把当前 app 加入红区";
+"menu.capture.red_named" = "把「%1$@」加入红区%2$@";
+/* 接在上面几条收编标题末尾；全角括号自带间距，不要加前导空格。 */
+"menu.capture.whole_app_suffix" = "（整个应用）";
+"menu.check_updates" = "检查更新…";
+"menu.lock.app" = "只看这个 app";
+"menu.lock.app_named" = "只看这个 app（%1$@）%2$@";
+"menu.lock.page" = "只看这个页面";
+"menu.lock.page_named" = "只看这个页面（%1$@）";
+"menu.lock.release" = "解除锁定";
+"menu.lock.release_named" = "解除锁定（%1$@）";
+"menu.lock.site" = "只看这个站点";
+"menu.lock.site_named" = "只看这个站点（%1$@）";
+/* 接在 menu.lock.app_named 末尾；全角括号自带间距，不要加前导空格。 */
+"menu.lock.whole_browser_suffix" = "（整个浏览器，装扩展可锁到页面）";
+"menu.pause_watch" = "暂停看护…";
+"menu.quit" = "退出 Anchor";
+"menu.recap" = "今日复盘";
+"menu.resume_watch" = "恢复看护";
+"menu.sanctioned_break" = "合法摸鱼 5 分钟";
+"menu.scenes" = "场景";
+"menu.settings" = "设置…";
+"menu.snap_back" = "立即拉回";
+"menu.status_prefix" = "当前状态：%1$@";
+"prompt.pause_reason.cancel" = "取消";
+"prompt.pause_reason.confirm" = "暂停";
+"prompt.pause_reason.message" = "暂停看护前，请写下原因（≥ %1$lld 个字符）——它会进今晚的复盘：";
+"prompt.pause_reason.placeholder" = "例如：要去开 1 小时的评审会";
+"prompt.pause_reason.title" = "暂停看护";
+"prompt.pause_reason.too_short" = "理由太短（%1$lld/%2$lld），写具体一点。";
+"statusitem.tooltip" = "Anchor — 桅杆上的瞭望员";
+"statusitem.tooltip_status" = "Anchor · %1$@";

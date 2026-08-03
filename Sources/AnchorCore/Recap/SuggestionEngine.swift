@@ -9,6 +9,8 @@ public struct Suggestion: Equatable, Sendable {
     }
 
     public let kind: Kind
+    /// 规则要作用的对象。是**聚合 key**（bundle id / URL host / `WeeklyAggregator.windowKey`），
+    /// 与语言无关——上层会拿它去改 preset 规则，所以不能塞展示文案。
     public let target: String
     public let message: String
     public let rationale: String
@@ -23,12 +25,13 @@ public struct Suggestion: Equatable, Sendable {
 
 /// 周回顾的聚合输入（由上层从一周的 session/drift 数据算好后传入）。
 public struct WeeklyInput: Sendable {
+    /// 场景名。传**显示名**（`Preset.displayName`），它会直接进文案。
     public let presetName: String
     /// 规则 A：某 URL/app 进入漂移 Top 5 的天数。
     public let driftTop5Days: [String: Int]
     /// 规则 B：绿区 app 本周触发漂移的次数。
     public let greenAppWeeklyDriftCount: [String: Int]
-    /// 规则 C：某固定时段连续高漂移的天数。
+    /// 规则 C：某固定时段连续高漂移的天数。key 是 `WeeklyAggregator.windowKey`（不可显示）。
     public let highDriftWindowConsecutiveDays: [String: Int]
 
     public init(
@@ -58,8 +61,8 @@ public enum SuggestionEngine {
             return Suggestion(
                 kind: .blacklist,
                 target: entry.key,
-                message: "要不要把 \(entry.key) 加进「\(input.presetName)」的红区？",
-                rationale: "它已连续 \(entry.value) 天进入你的漂移 Top 5。"
+                message: L("suggestion.blacklist.message", entry.key, input.presetName),
+                rationale: L("suggestion.blacklist.rationale", entry.value)
             )
         }
 
@@ -68,8 +71,8 @@ public enum SuggestionEngine {
             return Suggestion(
                 kind: .presetAdjust,
                 target: entry.key,
-                message: "\(entry.key) 经常成为漂移起点，要不要把它从「\(input.presetName)」绿区移到灰区？",
-                rationale: "本周它在绿区却触发了 \(entry.value) 次漂移。"
+                message: L("suggestion.preset_adjust.message", entry.key, input.presetName),
+                rationale: L("suggestion.preset_adjust.rationale", entry.value)
             )
         }
 
@@ -78,8 +81,9 @@ public enum SuggestionEngine {
             return Suggestion(
                 kind: .rhythm,
                 target: entry.key,
-                message: "要不要在 \(entry.key) 启用更严格的 preset？",
-                rationale: "你已连续 \(entry.value) 天在这个时段高频漂移。"
+                // target 留聚合 key，文案里用显示文案——两件事分开，别让展示串跑进字典 key。
+                message: L("suggestion.rhythm.message", WeeklyAggregator.windowDisplayLabel(forKey: entry.key)),
+                rationale: L("suggestion.rhythm.rationale", entry.value)
             )
         }
 

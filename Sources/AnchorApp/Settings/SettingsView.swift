@@ -9,15 +9,18 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettingsView()
-                .tabItem { Label("通用", systemImage: "gearshape") }
+                .tabItem { Label(L("settings.tab.general"), systemImage: "gearshape") }
             PresetsSettingsView(library: library, coordinator: coordinator)
-                .tabItem { Label("场景", systemImage: "list.bullet.rectangle") }
+                .tabItem { Label(L("settings.tab.presets"), systemImage: "list.bullet.rectangle") }
             FrictionSettingsView()
-                .tabItem { Label("摩擦", systemImage: "drop") }
+                .tabItem { Label(L("settings.tab.friction"), systemImage: "drop") }
+            PrivacySettingsView(coordinator: coordinator)
+                .tabItem { Label(L("settings.tab.privacy"), systemImage: "lock.shield") }
             AboutSettingsView()
-                .tabItem { Label("关于", systemImage: "info.circle") }
+                .tabItem { Label(L("settings.tab.about"), systemImage: "info.circle") }
         }
-        .frame(width: 520, height: 440)
+        // 固定尺寸会在长语言（德/法）下裁掉说明文字，给出理想值并允许长大。
+        .frame(minWidth: 520, idealWidth: 560, minHeight: 440, idealHeight: 480)
     }
 }
 
@@ -35,45 +38,52 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("开机自动启动", isOn: $launchAtLogin)
+                Toggle(L("settings.general.launch_at_login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in LoginItem.set(enabled) }
-                Picker("灵动岛位置", selection: $islandPosition) {
+                Picker(L("settings.general.island_position"), selection: $islandPosition) {
                     ForEach(IslandPosition.allCases) { pos in
                         Text(pos.label).tag(pos.rawValue)
                     }
                 }
-                Text("位置更改后重启 Anchor 生效。无刘海机型「自动」即菜单栏嵌入：空闲只占一个小圆点且点击穿透，不遮挡系统状态图标；漂移展开时才临时变宽。")
+                Text(L("settings.general.island_position_note"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                Toggle("手势触感反馈", isOn: $hapticsEnabled)
-                Toggle("全局快捷键（⌃⌥⌘ A/B/L/P）", isOn: $hotkeysEnabled)
-                Text("与其它应用冲突时可整体关闭（重启生效）；菜单与岛上入口不受影响。")
+                Toggle(L("settings.general.haptics"), isOn: $hapticsEnabled)
+                Toggle(L("settings.general.hotkeys"), isOn: $hotkeysEnabled)
+                Text(L("settings.general.hotkeys_note"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                Toggle("隐藏菜单栏图标", isOn: $hideMenuBarIcon)
+                // 快捷键依赖辅助功能权限；没授权时按下去毫无反应且没有任何提示，
+                // 用户只会以为功能坏了。把状态和授权入口摆出来。
+                if hotkeysEnabled {
+                    PermissionStatusRow(explanation: L("settings.permission.hotkeys_need_access"))
+                }
+                Toggle(L("settings.general.hide_menu_bar_icon"), isOn: $hideMenuBarIcon)
                     .onChange(of: hideMenuBarIcon) { _, _ in
                         NotificationCenter.default.post(name: .anchorMenuBarIconChanged, object: nil)
                     }
-                Text("菜单栏太挤可关掉图标——左键绿点、或在任何状态右键灵动岛，都能打开完整菜单。")
+                Text(L("settings.general.hide_menu_bar_icon_note"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                Toggle("自动检查更新", isOn: $autoUpdate)
+                Toggle(L("settings.general.auto_update"), isOn: $autoUpdate)
             }
 
-            Section("浏览器扩展") {
+            Section(L("settings.general.extension_section")) {
                 HStack {
                     Circle()
                         .fill(extensionConnected ? Color.green : Color.gray)
                         .frame(width: 8, height: 8)
-                    Text(extensionConnected ? "已连接" : "未连接")
+                    Text(extensionConnected
+                         ? L("settings.general.extension_connected")
+                         : L("settings.general.extension_disconnected"))
                     Spacer()
-                    Button("安装指南") {
+                    Button(L("settings.general.extension_install_guide")) {
                         NSWorkspace.shared.activateFileViewerSelecting(
                             [URL(fileURLWithPath: extensionPath)]
                         )
                     }
                 }
-                Text("Chrome → chrome://extensions → 开发者模式 → 加载已解压的扩展程序 → 选中上面目录。tab 级判定（如「GitHub 自己的仓库绿、trending 红」）需要扩展。")
+                Text(L("settings.general.extension_note"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -97,38 +107,48 @@ struct PresetsSettingsView: View {
 
     @State private var editing: Preset?
     @State private var showRevert = UserDefaults.standard.dictionary(forKey: SettingsKey.lastSuggestion) != nil
+    @State private var pendingDeletion: Preset?
 
     var body: some View {
         Form {
-            Section("场景（点选切换）") {
+            Section(L("settings.presets.section")) {
                 ForEach(library.presets) { preset in
                     HStack {
                         Image(systemName: preset.id == library.activePresetId ? "largecircle.fill.circle" : "circle")
                             .foregroundStyle(.tint)
                         VStack(alignment: .leading) {
-                            Text(preset.name)
-                            Text("绿 \(preset.greenRules.count) · 红 \(preset.redRules.count) · 倒计时 \(Int(preset.driftThresholdSeconds))s")
+                            Text(preset.displayName)
+                            Text(L("settings.presets.summary",
+                                   Int64(preset.greenRules.count),
+                                   Int64(preset.redRules.count),
+                                   Int64(preset.driftThresholdSeconds)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Button("编辑") { editing = preset }
+                        Button(L("settings.presets.edit")) { editing = preset }
+                        // 删除场景会丢掉用户攒了很久的规则，且不可撤销——必须先确认。
                         Button(role: .destructive) {
-                            library.delete(id: preset.id)
+                            pendingDeletion = preset
                         } label: { Image(systemName: "trash") }
                         .disabled(preset.id == library.activePresetId)
+                        .help(preset.id == library.activePresetId
+                              ? L("settings.presets.delete_disabled_help")
+                              : L("settings.presets.delete_help", preset.displayName))
+                        .accessibilityLabel(L("settings.presets.delete_accessibility", preset.displayName))
                     }
                     .contentShape(Rectangle())
                     .onTapGesture { library.switchTo(id: preset.id) }
                 }
-                Button("新建场景...") {
-                    editing = Preset(id: "user." + UUID().uuidString, name: "新场景")
+                Button(L("settings.presets.new")) {
+                    editing = Preset(id: "user." + UUID().uuidString,
+                                     name: L("settings.presets.new_default_name"))
                 }
             }
 
             if showRevert {
                 Section {
-                    Button("撤销上周建议的修改") {
+                    Button(L("settings.presets.revert_suggestion")) {
                         coordinator?.revertLastSuggestion()
                         showRevert = false
                     }
@@ -141,6 +161,19 @@ struct PresetsSettingsView: View {
                 if let updated { library.upsert(updated) }
                 editing = nil
             }
+        }
+        .confirmationDialog(
+            pendingDeletion.map { L("settings.presets.delete_confirm_title", $0.displayName) } ?? "",
+            isPresented: .init(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(L("settings.presets.delete_confirm_button"), role: .destructive) {
+                if let preset = pendingDeletion { library.delete(id: preset.id) }
+                pendingDeletion = nil
+            }
+            Button(L("settings.presets.delete_cancel"), role: .cancel) { pendingDeletion = nil }
+        } message: {
+            Text(L("settings.presets.delete_confirm_message"))
         }
     }
 }
@@ -171,18 +204,18 @@ struct PresetEditor: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                TextField("名称", text: $name)
+                TextField(L("preset.editor.name"), text: $name)
                 HStack {
-                    Text("漂移倒计时 \(Int(threshold))s")
+                    Text(L("preset.editor.threshold", Int64(threshold)))
                     Slider(value: $threshold, in: 15...300, step: 15)
                 }
 
-                Text("绿区应用").font(.caption.bold())
+                Text(L("preset.editor.green_apps")).font(.caption.bold())
                 AppChipsView(bundleIds: greenApps) { id in greenApps.removeAll { $0 == id } }
-                Text("红区应用").font(.caption.bold())
+                Text(L("preset.editor.red_apps")).font(.caption.bold())
                 AppChipsView(bundleIds: redApps) { id in redApps.removeAll { $0 == id } }
 
-                DisclosureGroup("从正在运行的应用添加") {
+                DisclosureGroup(L("preset.editor.add_from_running")) {
                     RunningAppPicker(
                         greenIds: Set(greenApps),
                         redIds: Set(redApps),
@@ -190,23 +223,24 @@ struct PresetEditor: View {
                     )
                 }
 
-                Text("绿区 URL 规则（一行一条，支持 *；浏览器 tab 级控制用这里）").font(.caption)
+                Text(L("preset.editor.green_urls")).font(.caption)
                 TextEditor(text: $greenURLText)
                     .font(.system(.caption, design: .monospaced)).frame(height: 70)
-                Text("红区 URL 规则").font(.caption)
+                Text(L("preset.editor.red_urls")).font(.caption)
                 TextEditor(text: $redURLText)
                     .font(.system(.caption, design: .monospaced)).frame(height: 60)
 
                 HStack {
                     Spacer()
-                    Button("取消") { onDone(nil) }
-                    Button("保存") { onDone(buildPreset()) }
+                    Button(L("preset.editor.cancel")) { onDone(nil) }
+                    Button(L("preset.editor.save")) { onDone(buildPreset()) }
                         .keyboardShortcut(.defaultAction)
                 }
             }
             .padding(16)
         }
-        .frame(width: 460, height: 540)
+        // 固定尺寸会在长语言（德/法）下裁掉说明文字，给出理想值并允许长大。
+        .frame(minWidth: 460, idealWidth: 460, minHeight: 540, idealHeight: 540)
     }
 
     /// 编辑器内同样执行互斥语义（与 Preset.capturing 一致）。
@@ -223,7 +257,7 @@ struct PresetEditor: View {
     private func buildPreset() -> Preset {
         Preset(
             id: presetId,
-            name: name.isEmpty ? "未命名" : name,
+            name: name.isEmpty ? L("preset.editor.untitled") : name,
             greenRules: greenApps.map { .app(bundleId: $0) } + Self.urlRules(from: greenURLText),
             redRules: redApps.map { .app(bundleId: $0) } + Self.urlRules(from: redURLText),
             driftThresholdSeconds: threshold
@@ -266,20 +300,102 @@ struct FrictionSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Toggle("漂移时屏幕渐进模糊（摩擦雾）", isOn: $frictionEnabled)
-                Toggle("严肃模式（关闭复盘自嘲文案）", isOn: $seriousMode)
-                Toggle("深度漂移时锁定滚动（需辅助功能权限）", isOn: $inputFriction)
+                Toggle(L("settings.friction.blur"), isOn: $frictionEnabled)
+                Toggle(L("settings.friction.serious_mode"), isOn: $seriousMode)
+                Toggle(L("settings.friction.scroll_lock"), isOn: $inputFriction)
+                // 开关打开但没权限时，之前是彻底静默——用户以为坏了。现在明说。
+                if inputFriction {
+                    PermissionStatusRow(explanation: L("settings.permission.scroll_lock_need_access"))
+                }
             } footer: {
-                Text("滚动锁默认关闭；开启后仅在漂移超过 3 分钟时生效，随时可在这里关掉。")
+                Text(L("settings.friction.scroll_lock_note"))
             }
-            Section("无障碍") {
-                Toggle("减少动态效果（不模糊屏幕，仅保留轻提示）", isOn: $reduceFriction)
-                Text("无障碍是底线：所有摩擦干预都能在这里一键关掉。")
+            Section(L("settings.friction.accessibility_section")) {
+                Toggle(L("settings.friction.reduce_motion"), isOn: $reduceFriction)
+                Text(L("settings.friction.accessibility_note"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - 隐私与数据
+
+/// 「数据只存本地」要能被用户查证、带走、删掉，否则只是一句口号。
+struct PrivacySettingsView: View {
+    weak var coordinator: AppCoordinator?
+
+    @AppStorage(SettingsKey.retentionDays) private var retentionDays = SessionStore.defaultRetentionDays
+    @State private var confirmingWipe = false
+    @State private var statusMessage: String?
+
+    private let retentionOptions = [30, 90, 365, 0]
+
+    var body: some View {
+        Form {
+            Section(L("settings.privacy.what_section")) {
+                Text(L("settings.privacy.what_recorded"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text(L("settings.privacy.storage_note"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(L("settings.privacy.retention_section")) {
+                Picker(L("settings.privacy.retention_picker"), selection: $retentionDays) {
+                    ForEach(retentionOptions, id: \.self) { days in
+                        Text(days == 0
+                             ? L("settings.privacy.retention_forever")
+                             : L("settings.privacy.retention_days", Int64(days))).tag(days)
+                    }
+                }
+            }
+
+            Section {
+                Button(L("settings.privacy.export")) { export() }
+                Button(L("settings.privacy.wipe"), role: .destructive) { confirmingWipe = true }
+                if let statusMessage {
+                    Text(statusMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+            } footer: {
+                Text(L("settings.privacy.wipe_note"))
+            }
+        }
+        .formStyle(.grouped)
+        .confirmationDialog(
+            L("settings.privacy.wipe_confirm_title"),
+            isPresented: $confirmingWipe,
+            titleVisibility: .visible
+        ) {
+            Button(L("settings.privacy.wipe_confirm_button"), role: .destructive) { wipe() }
+            Button(L("settings.privacy.wipe_cancel"), role: .cancel) {}
+        } message: {
+            Text(L("settings.privacy.wipe_confirm_message"))
+        }
+    }
+
+    private func export() {
+        guard let coordinator else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "anchor-data-\(DayKey.key(for: Date())).json"
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        coordinator.exportData(to: url) { error in
+            statusMessage = error == nil
+                ? L("settings.privacy.export_success", url.lastPathComponent)
+                : L("settings.privacy.export_failure", error!.localizedDescription)
+        }
+    }
+
+    private func wipe() {
+        coordinator?.wipeHistory { error in
+            statusMessage = error == nil
+                ? L("settings.privacy.wipe_success")
+                : L("settings.privacy.wipe_failure", error!.localizedDescription)
+        }
     }
 }
 
@@ -290,14 +406,26 @@ struct AboutSettingsView: View {
         (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "dev"
     }
 
+    private static let repo = "https://github.com/TIFOSI528/anchor"
+
     var body: some View {
         VStack(spacing: 10) {
-            Text("⚓︎ Anchor").font(.largeTitle)
-            Text("桅杆上的瞭望员").foregroundStyle(.secondary)
-            Text("版本 \(version)").font(.callout)
+            // 品牌名不翻译。
+            Text(verbatim: "⚓︎ Anchor").font(.largeTitle)
+            Text(L("settings.about.tagline")).foregroundStyle(.secondary)
+            Text(L("settings.about.version", version)).font(.callout).textSelection(.enabled)
             Divider().padding(.vertical, 4)
-            Text("GPL-3.0 · Local-first · 无遥测").font(.footnote)
-            Text("致谢：DynamicNotchKit · Sparkle · SQLite.swift")
+            Text(L("settings.about.license_line")).font(.footnote)
+            // 开源项目的「关于」页此前一个可点链接都没有——用户既无处反馈问题，
+            // 也无法核对许可证与隐私说明。
+            HStack(spacing: 14) {
+                Link(L("settings.about.homepage"), destination: URL(string: Self.repo)!)
+                Link(L("settings.about.report_issue"), destination: URL(string: Self.repo + "/issues/new")!)
+                Link(L("settings.about.privacy_policy"), destination: URL(string: Self.repo + "/blob/main/PRIVACY.md")!)
+                Link(L("settings.about.license"), destination: URL(string: Self.repo + "/blob/main/LICENSE")!)
+            }
+            .font(.footnote)
+            Text(L("settings.about.credits"))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -325,6 +453,8 @@ enum SettingsKey {
     static let inputFrictionEnabled = "anchor.inputFrictionEnabled"
     static let extensionConnected = "anchor.extensionConnected"
     static let lastSuggestion = "anchor.lastSuggestion"
+    /// 历史数据留存天数；0 = 永久保留。
+    static let retentionDays = "anchor.retentionDays"
     /// Sparkle 读这个标准键决定是否自动检查。
     static let autoUpdateEnabled = "SUEnableAutomaticChecks"
 }

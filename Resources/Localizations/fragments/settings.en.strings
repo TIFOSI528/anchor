@@ -1,0 +1,99 @@
+/* Anchor — Settings window, English (source of truth for key names).
+ * Scope: SettingsView / SettingsWindowController / AppRuleViews / IslandPosition.
+ * Voice: a lookout on the mast, not a jailer — calm, plain, never threatening.
+ * Positional specifiers (%1$@ / %1$lld) so translators may reorder freely.
+ */
+
+"apprule.empty_hint" = "No apps yet — pick some from “Running apps” below, or add the current one from the menu bar.";
+"apprule.remove_accessibility" = "Remove %1$@";
+"apprule.zone_green" = "Green";
+"apprule.zone_red" = "Red";
+
+"island.position.auto" = "Automatic (use the notch when there is one, otherwise the menu bar)";
+"island.position.menu_bar" = "Menu bar (only as wide as its content, click-through when idle)";
+"island.position.notch" = "Notch (draws a faux notch on screens without one, covers the center icons)";
+"island.position.top_center" = "Floating panel, top center";
+
+"preset.editor.add_from_running" = "Add from running apps";
+"preset.editor.cancel" = "Cancel";
+"preset.editor.green_apps" = "Green-zone apps";
+"preset.editor.green_urls" = "Green-zone URL rules (one per line, * allowed; tab-level control lives here)";
+"preset.editor.name" = "Name";
+"preset.editor.red_apps" = "Red-zone apps";
+"preset.editor.red_urls" = "Red-zone URL rules";
+"preset.editor.save" = "Save";
+"preset.editor.threshold" = "Drift countdown %1$lld s";
+"preset.editor.untitled" = "Untitled";
+
+"settings.about.credits" = "Thanks to DynamicNotchKit · Sparkle · SQLite.swift";
+"settings.about.homepage" = "Project Home";
+"settings.about.license" = "License";
+"settings.about.license_line" = "GPL-3.0 · All data stays on this Mac · No account, no telemetry";
+"settings.about.privacy_policy" = "Privacy";
+"settings.about.report_issue" = "Report an Issue";
+"settings.about.tagline" = "A lookout on the mast";
+"settings.about.version" = "Version %1$@";
+
+"settings.friction.accessibility_note" = "Accessibility comes first: every friction effect can be switched off right here.";
+"settings.friction.accessibility_section" = "Accessibility";
+"settings.friction.blur" = "Gradually blur the screen while you drift (friction fog)";
+"settings.friction.reduce_motion" = "Reduce motion (no screen blur, just a quiet nudge)";
+"settings.friction.scroll_lock" = "Lock scrolling during deep drift (needs Accessibility permission)";
+"settings.friction.scroll_lock_note" = "Scroll lock is off by default. Once on, it only kicks in after 3 minutes of drift, and you can turn it off here at any time.";
+"settings.friction.serious_mode" = "Serious mode (drop the tongue-in-cheek recap copy)";
+
+"settings.general.auto_update" = "Check for updates automatically";
+"settings.general.extension_connected" = "Connected";
+"settings.general.extension_disconnected" = "Not connected";
+"settings.general.extension_install_guide" = "Install Guide";
+"settings.general.extension_note" = "Chrome → chrome://extensions → Developer mode → Load unpacked → choose the folder above. Tab-level rules (say, “your own GitHub repo green, trending red”) need the extension.";
+"settings.general.extension_section" = "Browser Extension";
+"settings.general.haptics" = "Haptic feedback for gestures";
+"settings.general.hide_menu_bar_icon" = "Hide the menu bar icon";
+"settings.general.hide_menu_bar_icon_note" = "If your menu bar is crowded, hide the icon — left-click the green dot, or right-click the island in any state, to open the full menu.";
+"settings.general.hotkeys" = "Global shortcuts (⌃⌥⌘ A/B/L/P)";
+"settings.general.hotkeys_note" = "Turn them all off if they clash with another app (takes effect after a restart). The menu and the island itself keep working.";
+"settings.general.island_position" = "Island position";
+"settings.general.island_position_note" = "Restart Anchor for a position change to take effect. On Macs without a notch, “Automatic” means the menu bar: when idle it is just a small dot that clicks straight through, so your status icons stay reachable, and it only widens while a drift is showing.";
+"settings.general.launch_at_login" = "Launch at login";
+
+"settings.presets.delete_accessibility" = "Delete scene %1$@";
+"settings.presets.delete_cancel" = "Cancel";
+"settings.presets.delete_confirm_button" = "Delete";
+"settings.presets.delete_confirm_message" = "The green-zone and red-zone rules in this scene go with it. This cannot be undone.";
+"settings.presets.delete_confirm_title" = "Delete the scene “%1$@”?";
+"settings.presets.delete_disabled_help" = "The scene in use cannot be deleted — switch to another one first";
+"settings.presets.delete_help" = "Delete “%1$@”";
+"settings.presets.edit" = "Edit";
+"settings.presets.new" = "New Scene…";
+"settings.presets.new_default_name" = "New Scene";
+"settings.presets.revert_suggestion" = "Undo last week's suggested changes";
+"settings.presets.section" = "Scenes (click to switch)";
+"settings.presets.summary" = "Green %1$lld · Red %2$lld · Countdown %3$lld s";
+
+"settings.privacy.export" = "Export My Data (JSON)…";
+"settings.privacy.export_failure" = "Export failed: %1$@";
+"settings.privacy.export_success" = "Exported to %1$@";
+"settings.privacy.retention_days" = "%1$lld days";
+"settings.privacy.retention_forever" = "Keep forever";
+"settings.privacy.retention_picker" = "Auto-delete older than";
+"settings.privacy.retention_section" = "Retention";
+"settings.privacy.storage_note" = "Everything lives on this Mac, in ~/Library/Application Support/Anchor/anchor.sqlite, readable only by you. No account, no cloud, no telemetry.";
+"settings.privacy.what_recorded" = "Only this: when you switched apps, the app name, the site + path of a URL, and each day's totals. Everything after the ? in a URL (search terms, share tokens, session parameters) is dropped before writing and never touches the disk.";
+"settings.privacy.what_section" = "What Gets Recorded";
+"settings.privacy.wipe" = "Erase All History…";
+"settings.privacy.wipe_cancel" = "Cancel";
+"settings.privacy.wipe_confirm_button" = "Erase";
+"settings.privacy.wipe_confirm_message" = "Every focus session, drift record and daily recap will be permanently deleted. This cannot be undone. Your scene rules are kept.";
+"settings.privacy.wipe_confirm_title" = "Erase all history?";
+"settings.privacy.wipe_failure" = "Erase failed: %1$@";
+"settings.privacy.wipe_note" = "Erasing history leaves the scene rules you set up untouched.";
+"settings.privacy.wipe_success" = "History erased.";
+
+"settings.tab.about" = "About";
+"settings.tab.friction" = "Friction";
+"settings.tab.general" = "General";
+"settings.tab.presets" = "Scenes";
+"settings.tab.privacy" = "Privacy & Data";
+
+"settings.window.title" = "Anchor Settings";

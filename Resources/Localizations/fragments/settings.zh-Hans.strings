@@ -1,0 +1,98 @@
+/* Anchor — 设置窗口，简体中文。key 与 settings.en.strings 完全一致，只翻译右侧。
+ * 覆盖范围：SettingsView / SettingsWindowController / AppRuleViews / IslandPosition。
+ * 右侧为原文逐字保留；参数用 %1$@ / %1$lld 定位，语序可随语言调整。
+ */
+
+"apprule.empty_hint" = "还没有应用——从下方「正在运行的应用」点选，或用菜单栏一键收编。";
+"apprule.remove_accessibility" = "移除 %1$@";
+"apprule.zone_green" = "绿";
+"apprule.zone_red" = "红";
+
+"island.position.auto" = "自动（有刘海用刘海，否则菜单栏嵌入）";
+"island.position.menu_bar" = "菜单栏嵌入（宽度即内容，空闲点击穿透）";
+"island.position.notch" = "刘海（无刘海屏画人造刘海，会盖住中段图标）";
+"island.position.top_center" = "顶部居中浮窗";
+
+"preset.editor.add_from_running" = "从正在运行的应用添加";
+"preset.editor.cancel" = "取消";
+"preset.editor.green_apps" = "绿区应用";
+"preset.editor.green_urls" = "绿区 URL 规则（一行一条，支持 *；浏览器 tab 级控制用这里）";
+"preset.editor.name" = "名称";
+"preset.editor.red_apps" = "红区应用";
+"preset.editor.red_urls" = "红区 URL 规则";
+"preset.editor.save" = "保存";
+"preset.editor.threshold" = "漂移倒计时 %1$llds";
+"preset.editor.untitled" = "未命名";
+
+"settings.about.credits" = "致谢：DynamicNotchKit · Sparkle · SQLite.swift";
+"settings.about.homepage" = "项目主页";
+"settings.about.license" = "许可证";
+"settings.about.license_line" = "GPL-3.0 · 数据只存本地 · 无账号无遥测";
+"settings.about.privacy_policy" = "隐私说明";
+"settings.about.report_issue" = "反馈问题";
+"settings.about.tagline" = "桅杆上的瞭望员";
+"settings.about.version" = "版本 %1$@";
+
+"settings.friction.accessibility_note" = "无障碍是底线：所有摩擦干预都能在这里一键关掉。";
+"settings.friction.accessibility_section" = "无障碍";
+"settings.friction.blur" = "漂移时屏幕渐进模糊（摩擦雾）";
+"settings.friction.reduce_motion" = "减少动态效果（不模糊屏幕，仅保留轻提示）";
+"settings.friction.scroll_lock" = "深度漂移时锁定滚动（需辅助功能权限）";
+"settings.friction.scroll_lock_note" = "滚动锁默认关闭；开启后仅在漂移超过 3 分钟时生效，随时可在这里关掉。";
+"settings.friction.serious_mode" = "严肃模式（关闭复盘自嘲文案）";
+
+"settings.general.auto_update" = "自动检查更新";
+"settings.general.extension_connected" = "已连接";
+"settings.general.extension_disconnected" = "未连接";
+"settings.general.extension_install_guide" = "安装指南";
+"settings.general.extension_note" = "Chrome → chrome://extensions → 开发者模式 → 加载已解压的扩展程序 → 选中上面目录。tab 级判定（如「GitHub 自己的仓库绿、trending 红」）需要扩展。";
+"settings.general.extension_section" = "浏览器扩展";
+"settings.general.haptics" = "手势触感反馈";
+"settings.general.hide_menu_bar_icon" = "隐藏菜单栏图标";
+"settings.general.hide_menu_bar_icon_note" = "菜单栏太挤可关掉图标——左键绿点、或在任何状态右键灵动岛，都能打开完整菜单。";
+"settings.general.hotkeys" = "全局快捷键（⌃⌥⌘ A/B/L/P）";
+"settings.general.hotkeys_note" = "与其它应用冲突时可整体关闭（重启生效）；菜单与岛上入口不受影响。";
+"settings.general.island_position" = "灵动岛位置";
+"settings.general.island_position_note" = "位置更改后重启 Anchor 生效。无刘海机型「自动」即菜单栏嵌入：空闲只占一个小圆点且点击穿透，不遮挡系统状态图标；漂移展开时才临时变宽。";
+"settings.general.launch_at_login" = "开机自动启动";
+
+"settings.presets.delete_accessibility" = "删除场景 %1$@";
+"settings.presets.delete_cancel" = "取消";
+"settings.presets.delete_confirm_button" = "删除";
+"settings.presets.delete_confirm_message" = "这个场景里的绿区 / 红区规则会一起删掉，无法撤销。";
+"settings.presets.delete_confirm_title" = "删除场景「%1$@」？";
+"settings.presets.delete_disabled_help" = "正在使用的场景不能删除，先切到别的场景";
+"settings.presets.delete_help" = "删除「%1$@」";
+"settings.presets.edit" = "编辑";
+"settings.presets.new" = "新建场景...";
+"settings.presets.new_default_name" = "新场景";
+"settings.presets.revert_suggestion" = "撤销上周建议的修改";
+"settings.presets.section" = "场景（点选切换）";
+"settings.presets.summary" = "绿 %1$lld · 红 %2$lld · 倒计时 %3$llds";
+
+"settings.privacy.export" = "导出我的数据（JSON）...";
+"settings.privacy.export_failure" = "导出失败：%1$@";
+"settings.privacy.export_success" = "已导出到 %1$@";
+"settings.privacy.retention_days" = "%1$lld 天";
+"settings.privacy.retention_forever" = "永久保留";
+"settings.privacy.retention_picker" = "自动删除早于";
+"settings.privacy.retention_section" = "保留时长";
+"settings.privacy.storage_note" = "全部存在本机 ~/Library/Application Support/Anchor/anchor.sqlite（仅本人可读），没有账号、没有云端、没有遥测。";
+"settings.privacy.what_recorded" = "只有：应用切换的时间点、应用名、网址的「站点 + 路径」，以及每天的统计。网址的 ? 之后（搜索词、分享令牌、会话参数）在写入前就被丢掉，从不落盘。";
+"settings.privacy.what_section" = "记录了什么";
+"settings.privacy.wipe" = "清除全部历史...";
+"settings.privacy.wipe_cancel" = "取消";
+"settings.privacy.wipe_confirm_button" = "清除";
+"settings.privacy.wipe_confirm_message" = "所有专注时段、漂移记录和每日复盘都会被永久删除，无法撤销。场景规则会保留。";
+"settings.privacy.wipe_confirm_title" = "清除全部历史记录？";
+"settings.privacy.wipe_failure" = "清除失败：%1$@";
+"settings.privacy.wipe_note" = "清除历史不会动你配好的场景规则。";
+"settings.privacy.wipe_success" = "历史已清除。";
+
+"settings.tab.about" = "关于";
+"settings.tab.friction" = "摩擦";
+"settings.tab.general" = "通用";
+"settings.tab.presets" = "场景";
+"settings.tab.privacy" = "隐私与数据";
+
+"settings.window.title" = "Anchor 设置";

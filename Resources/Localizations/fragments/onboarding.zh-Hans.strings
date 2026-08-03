@@ -1,0 +1,60 @@
+/* 首启引导 + 权限状态。语气：平静、说人话、不训人。
+   刻意在这里第一次解释"绿区/灰区/红区"这套内部词汇，之前界面里从没定义过。 */
+
+"onboarding.window_title" = "欢迎使用 Anchor";
+
+"onboarding.welcome.title" = "桅杆上的瞭望员，不是狱卒";
+"onboarding.welcome.subtitle" = "Anchor 不屏蔽任何东西。当你从手上的事情漂走时，它会亮起一个倒计时、让屏幕慢慢起雾——单击一下就回到刚才的工作。";
+"onboarding.zone.green.title" = "在干活 —— 也就是「绿区」";
+"onboarding.zone.green.detail" = "你标记为「属于当前任务」的应用和网站。Anchor 几乎隐形，只留一个安静的绿点。";
+"onboarding.zone.gray.title" = "漂移中 —— 也就是「灰区」";
+"onboarding.zone.gray.detail" = "所有未分类的东西。开始倒计时，但不拦你——只是待得越久、屏幕雾得越明显。";
+"onboarding.zone.red.title" = "明确不看 —— 也就是「红区」";
+"onboarding.zone.red.detail" = "你亲自拉黑的站点。Anchor 会立刻提醒——但仍留 5 秒缓冲，以防手滑点错。";
+"onboarding.welcome.escape_hatch" = "什么时候真想歇会儿，长按灵动岛 3 秒——那就是光明正大的 5 分钟，不必内疚，也不用跟它较劲。";
+
+"onboarding.scene.title" = "现在在做什么？";
+"onboarding.scene.subtitle" = "场景决定哪些应用算「在干活」。随时可以从菜单栏换。";
+"onboarding.scene.observe_only" = "只记录 —— 从不糊屏幕";
+"onboarding.scene.rule_count" = "%1$lld 个在干活 · %2$lld 个不看";
+"onboarding.scene.footnote" = "只有当 Anchor 知道该把你拉回哪里时，它才会出手。在那之前它只是安静地看着。";
+
+"onboarding.extension.title" = "浏览器扩展（可选）";
+"onboarding.extension.subtitle" = "不装的话，Anchor 只能看到前台是哪个应用。装了之后规则可以精确到网址——你自己的仓库算在干活，trending 页面不算。";
+"onboarding.extension.step1" = "在 Chrome 里打开这个地址：";
+"onboarding.extension.step2" = "打开右上角「开发者模式」，再点「加载已解压的扩展程序」。";
+"onboarding.extension.step3" = "选中下面这个按钮打开的文件夹。";
+"onboarding.extension.copy" = "复制";
+"onboarding.extension.reveal" = "打开扩展所在文件夹";
+"onboarding.extension.connected" = "已连接";
+"onboarding.extension.waiting" = "还没连上";
+"onboarding.extension.optional" = "跳过也没关系，其它功能照常工作，只是少了按网址判定这一层。";
+
+"onboarding.shortcuts.title" = "快捷键（可选）";
+"onboarding.shortcuts.subtitle" = "在任何地方都能按，不用先打开菜单。";
+"onboarding.shortcuts.snap_back" = "回到工作";
+"onboarding.shortcuts.slack" = "光明正大歇 5 分钟";
+"onboarding.shortcuts.lock" = "Focus Lock：只看这个页面";
+"onboarding.shortcuts.pause" = "暂停看护";
+"onboarding.shortcuts.rationale" = "macOS 规定：应用要监听全局快捷键，必须先获得「辅助功能」权限。Anchor 只用它来识别上面这四个组合键，不记录你敲的任何内容，也没有任何数据离开这台电脑。";
+"onboarding.shortcuts.grant" = "去授权";
+"onboarding.shortcuts.open_settings" = "打开系统设置";
+"onboarding.shortcuts.optional" = "可以跳过。所有操作在菜单栏和灵动岛上都能完成。";
+
+"onboarding.progress" = "第 %1$lld 步，共 %2$lld 步";
+"onboarding.back" = "上一步";
+"onboarding.skip" = "跳过";
+"onboarding.next" = "下一步";
+"onboarding.done" = "开始使用";
+
+"permission.status.granted" = "快捷键已生效";
+"permission.status.denied" = "未授权 —— 快捷键不会响应";
+"permission.status.not_determined" = "还没设置";
+
+/* 重看引导的菜单项，以及设置里那一行权限状态。 */
+"menu.getting_started" = "入门指南…";
+"settings.permission.section" = "权限";
+"settings.permission.grant" = "去授权…";
+"settings.permission.open_settings" = "打开系统设置…";
+"settings.permission.hotkeys_need_access" = "全局快捷键需要「辅助功能」权限。没授权它们就是不响应——Anchor 不会为此反复弹窗打扰你。";
+"settings.permission.scroll_lock_need_access" = "滚动锁需要同一个权限。没授权就打开开关，不会有任何效果。";

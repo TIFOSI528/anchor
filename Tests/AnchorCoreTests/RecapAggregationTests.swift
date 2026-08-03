@@ -59,6 +59,56 @@ final class TopThievesTests: XCTestCase {
         XCTAssertEqual(thieves[1].snark, TopThieves.snarkLibrary[1])
     }
 
+    /// 文案库存的是**本地化 key**，不是译文——名次按 `index % count` 取梗，
+    /// 所以库的长度是有语义的：某个语言多写/少写一条，每个名次拿到的梗就会错位。
+    /// 这条断言就是拦住"顺手改一下条数"。
+    func testSnarkLibraryIsAFixedLengthKeyList() {
+        XCTAssertEqual(TopThieves.snarkLibrary.count, 6)
+        for (index, key) in TopThieves.snarkLibrary.enumerated() {
+            XCTAssertEqual(key, "thief.snark.\(index)")
+        }
+        XCTAssertEqual(Set(TopThieves.snarkLibrary).count, TopThieves.snarkLibrary.count)
+    }
+
+    /// 查表推迟到渲染：`snark` 是 key，`localizedSnark` 才是给人看的。
+    /// 测试里查不到表，`L()` 回落到 key，所以两者相等——但严肃模式下都得是 nil。
+    func testLocalizedSnarkResolvesAtRenderTime() {
+        let drifts = [drift(to: "a", seconds: 300)]
+        let teasing = TopThieves.compute(drifts: drifts, deepScore: 80).first
+        XCTAssertEqual(teasing?.localizedSnark, L(TopThieves.snarkLibrary[0]))
+        let serious = TopThieves.compute(drifts: drifts, deepScore: 80, seriousMode: true).first
+        XCTAssertNil(serious?.localizedSnark)
+    }
+
+    /// 六条梗在两种语言里都必须有译文。少一条不会报错，只会在界面上显示成
+    /// `thief.snark.4` 这种字符串——所以这里把"少一条"变成硬失败。
+    func testEverySnarkKeyHasTextInBothLanguages() throws {
+        for language in ["en", "zh-Hans"] {
+            try LocalizedTable.withLanguage(language) {
+                for key in TopThieves.snarkLibrary {
+                    let text = L(key)
+                    XCTAssertNotEqual(text, key, "\(language) 缺少 \(key)")
+                    XCTAssertFalse(text.isEmpty, "\(language) 的 \(key) 是空串")
+                }
+            }
+        }
+    }
+
+    /// 真实表下的成品：名次 → 梗的对应关系不能因为语言而变。
+    func testSnarkFollowsRankNotLanguage() throws {
+        let drifts = [drift(to: "a", seconds: 300), drift(to: "b", seconds: 200)]
+        try LocalizedTable.withLanguage("zh-Hans") {
+            let thieves = TopThieves.compute(drifts: drifts, deepScore: 80)
+            XCTAssertEqual(thieves[0].localizedSnark, "又赢了")
+            XCTAssertEqual(thieves[1].localizedSnark, "假装在学习")
+        }
+        try LocalizedTable.withLanguage("en") {
+            let thieves = TopThieves.compute(drifts: drifts, deepScore: 80)
+            XCTAssertEqual(thieves[0].localizedSnark, "undefeated")
+            XCTAssertEqual(thieves[1].localizedSnark, "research, technically")
+        }
+    }
+
     func testEmptyReturnsEmpty() {
         XCTAssertTrue(TopThieves.compute(drifts: [], deepScore: 80).isEmpty)
     }

@@ -1,0 +1,45 @@
+/* Anchor — menu bar / status item / pause prompt (English).
+   Source files: Sources/AnchorApp/{AppDelegate,PauseReasonPrompt,StatusBarIcon}.swift
+   Keys are semantic (area.subarea.meaning) and sorted. Positional specifiers only,
+   so translators can reorder without touching code. Merge into en.lproj/Localizable.strings. */
+
+"alert.no_update_feed.message" = "You're running a development or self-built version. To get updates, download an official release from the project's releases page.";
+"alert.no_update_feed.ok" = "OK";
+"alert.no_update_feed.open_releases" = "Open Releases Page";
+"alert.no_update_feed.title" = "This build doesn't check for updates automatically";
+"menu.capture.gray_generic" = "Move Back to Gray Zone";
+"menu.capture.gray_named" = "Move \"%1$@\" Back to Gray Zone";
+"menu.capture.green_generic" = "Add Current App to Green Zone";
+"menu.capture.green_named" = "Add \"%1$@\" to Green Zone%2$@";
+"menu.capture.red_generic" = "Add Current App to Red Zone";
+"menu.capture.red_named" = "Add \"%1$@\" to Red Zone%2$@";
+/* Appended to the capture titles above; keep the leading space. */
+"menu.capture.whole_app_suffix" = " (whole app)";
+"menu.check_updates" = "Check for Updates…";
+"menu.lock.app" = "Only This App";
+"menu.lock.app_named" = "Only This App (%1$@)%2$@";
+"menu.lock.page" = "Only This Page";
+"menu.lock.page_named" = "Only This Page (%1$@)";
+"menu.lock.release" = "Release Focus Lock";
+"menu.lock.release_named" = "Release Focus Lock (%1$@)";
+"menu.lock.site" = "Only This Site";
+"menu.lock.site_named" = "Only This Site (%1$@)";
+/* Appended to menu.lock.app_named; keep the leading space. */
+"menu.lock.whole_browser_suffix" = " (whole browser — install the extension to lock a single page)";
+"menu.pause_watch" = "Pause the Watch…";
+"menu.quit" = "Quit Anchor";
+"menu.recap" = "Today's Recap";
+"menu.resume_watch" = "Resume the Watch";
+"menu.sanctioned_break" = "Take a Sanctioned 5-Minute Break";
+"menu.scenes" = "Scenes";
+"menu.settings" = "Settings…";
+"menu.snap_back" = "Snap Back Now";
+"menu.status_prefix" = "Status: %1$@";
+"prompt.pause_reason.cancel" = "Cancel";
+"prompt.pause_reason.confirm" = "Pause";
+"prompt.pause_reason.message" = "Before pausing the watch, write down why (%1$lld characters or more) — it lands in tonight's recap:";
+"prompt.pause_reason.placeholder" = "e.g. an hour-long review meeting";
+"prompt.pause_reason.title" = "Pause the Watch";
+"prompt.pause_reason.too_short" = "That's a bit short (%1$lld/%2$lld) — a little more detail, please.";
+"statusitem.tooltip" = "Anchor — a lookout on the mast";
+"statusitem.tooltip_status" = "Anchor · %1$@";

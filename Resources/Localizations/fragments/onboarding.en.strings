@@ -1,0 +1,60 @@
+/* Onboarding + permission status. Tone: calm, plain-language, never scolding.
+   Deliberately avoids the internal vocabulary (green/gray/red zone) until it is defined here. */
+
+"onboarding.window_title" = "Welcome to Anchor";
+
+"onboarding.welcome.title" = "A lookout, not a jailer";
+"onboarding.welcome.subtitle" = "Anchor never blocks anything. When you drift away from what you were doing, it lights up a countdown and gently fogs the screen — one click brings you back.";
+"onboarding.zone.green.title" = "Working — the “green zone”";
+"onboarding.zone.green.detail" = "Apps and sites you marked as part of the task. Anchor stays invisible — just a quiet green dot.";
+"onboarding.zone.gray.title" = "Drifting — the “gray zone”";
+"onboarding.zone.gray.detail" = "Anything unclassified. A countdown starts. You are not blocked — the screen just fogs a little more the longer you stay.";
+"onboarding.zone.red.title" = "Off-limits — the “red zone”";
+"onboarding.zone.red.detail" = "Sites you explicitly ruled out. Anchor speaks up right away — but still waits 5 seconds, in case you clicked by mistake.";
+"onboarding.welcome.escape_hatch" = "Whenever you actually want a break, hold the island for 3 seconds — that is a sanctioned 5 minutes, no guilt, no argument.";
+
+"onboarding.scene.title" = "Pick what you are doing";
+"onboarding.scene.subtitle" = "A scene decides which apps count as work. You can change it any time from the menu bar.";
+"onboarding.scene.observe_only" = "Records only — never fogs the screen";
+"onboarding.scene.rule_count" = "%1$lld working · %2$lld off-limits";
+"onboarding.scene.footnote" = "Anchor only nudges you once it knows somewhere to bring you back to. Until then it just watches quietly.";
+
+"onboarding.extension.title" = "Browser extension (optional)";
+"onboarding.extension.subtitle" = "Without it Anchor sees only which app is in front. With it, rules can be per-URL — your own repo counts as work while the trending page does not.";
+"onboarding.extension.step1" = "Open this address in Chrome:";
+"onboarding.extension.step2" = "Turn on Developer mode, then choose “Load unpacked”.";
+"onboarding.extension.step3" = "Select the folder Anchor reveals below.";
+"onboarding.extension.copy" = "Copy";
+"onboarding.extension.reveal" = "Reveal the extension folder";
+"onboarding.extension.connected" = "Connected";
+"onboarding.extension.waiting" = "Not connected yet";
+"onboarding.extension.optional" = "Skip this and everything else still works — you just lose per-URL rules.";
+
+"onboarding.shortcuts.title" = "Shortcuts (optional)";
+"onboarding.shortcuts.subtitle" = "These work from anywhere, without opening a menu.";
+"onboarding.shortcuts.snap_back" = "Go back to work";
+"onboarding.shortcuts.slack" = "Take a sanctioned 5 minutes";
+"onboarding.shortcuts.lock" = "Focus Lock: only this page";
+"onboarding.shortcuts.pause" = "Pause the watch";
+"onboarding.shortcuts.rationale" = "macOS requires Accessibility access before an app may watch for global shortcuts. Anchor uses it only to notice these four key combinations — it does not record what you type, and nothing ever leaves your Mac.";
+"onboarding.shortcuts.grant" = "Grant access";
+"onboarding.shortcuts.open_settings" = "Open System Settings";
+"onboarding.shortcuts.optional" = "You can skip this. Every action is also in the menu bar and on the island itself.";
+
+"onboarding.progress" = "Step %1$lld of %2$lld";
+"onboarding.back" = "Back";
+"onboarding.skip" = "Skip";
+"onboarding.next" = "Next";
+"onboarding.done" = "Start using Anchor";
+
+"permission.status.granted" = "Shortcuts are active";
+"permission.status.denied" = "Not allowed — shortcuts will not fire";
+"permission.status.not_determined" = "Not set up yet";
+
+/* Menu entry to re-open the guide, and the permission row shown in Settings. */
+"menu.getting_started" = "Getting Started…";
+"settings.permission.section" = "Permissions";
+"settings.permission.grant" = "Grant access…";
+"settings.permission.open_settings" = "Open System Settings…";
+"settings.permission.hotkeys_need_access" = "Global shortcuts need Accessibility access. Without it they simply will not fire — Anchor will not nag you about it.";
+"settings.permission.scroll_lock_need_access" = "Scroll lock needs the same access. Turning it on without granting access has no effect.";

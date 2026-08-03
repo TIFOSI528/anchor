@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import AnchorCore
 
 /// 今日复盘窗口（PR #24/#25）。Sections 见 daily-recap-spec §二。
@@ -19,9 +20,9 @@ struct RecapView: View {
                 .padding(24)
             } else {
                 VStack(spacing: 8) {
-                    Text("今天还没有数据")
+                    Text(L("recap.empty.title"))
                         .font(.title3)
-                    Text("开始专注后，今晚 22:00 在这里见。")
+                    Text(L("recap.empty.subtitle"))
                         .foregroundStyle(.secondary)
                         .font(.callout)
                 }
@@ -35,7 +36,8 @@ struct RecapView: View {
     // MARK: - sections
 
     private func header(_ data: RecapData) -> some View {
-        Text("今日复盘 · \(data.dateLabel)")
+        // dateLabel 是 locale 无关的存储 key；这里转成跟随系统语言/日历的显示文案。
+        Text(L("recap.header.title", DayKey.displayLabel(forKey: data.dateLabel)))
             .font(.title2.bold())
     }
 
@@ -49,7 +51,7 @@ struct RecapView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Text(data.narrative.isEmpty ? "今天没有足够的数据生成叙事。" : data.narrative)
+            Text(data.narrative.isEmpty ? L("recap.narrative.empty") : data.narrative)
                 .font(.body)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -59,14 +61,14 @@ struct RecapView: View {
 
     private func timelineSection(_ data: RecapData) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle("24h 时间线")
+            sectionTitle(L("recap.section.timeline"))
             TimelineBar(segments: data.segments)
                 .frame(height: 36)
             HStack {
-                legend(Color(hex: 0x22C55E), "深度绿区")
-                legend(Color(hex: 0x86EFAC), "绿区")
-                legend(Color(hex: 0xD1D5DB), "灰区")
-                legend(Color(hex: 0xFCA5A5), "红区")
+                legend(Color(hex: 0x22C55E), L("recap.legend.deep_green"))
+                legend(Color(hex: 0x86EFAC), L("recap.legend.green"))
+                legend(Color(hex: 0xD1D5DB), L("recap.legend.gray"))
+                legend(Color(hex: 0xFCA5A5), L("recap.legend.red"))
             }
             .font(.caption2)
         }
@@ -74,16 +76,16 @@ struct RecapView: View {
 
     private func heatmapSection(_ data: RecapData) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle("本周漂移热力图（周一–周五 · 8–22 时）")
+            sectionTitle(L("recap.section.heatmap"))
             HeatmapGrid(heatmap: data.heatmap)
         }
     }
 
     private func thievesSection(_ data: RecapData) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle("今日罪人榜")
+            sectionTitle(L("recap.section.thieves"))
             if data.thieves.isEmpty {
-                Text("今天没有时间小偷。").font(.callout).foregroundStyle(.secondary)
+                Text(L("recap.thieves.empty")).font(.callout).foregroundStyle(.secondary)
             } else {
                 ForEach(data.thieves, id: \.rank) { thief in
                     HStack {
@@ -91,7 +93,8 @@ struct RecapView: View {
                         Text(thief.label).lineLimit(1)
                         Spacer()
                         Text(Self.minutesLabel(thief.totalSeconds)).foregroundStyle(.secondary)
-                        if let snark = thief.snark {
+                        // thief.snark 存的是本地化 key，查表推迟到这里（见 TopThieves.snarkLibrary）。
+                        if let snark = thief.localizedSnark {
                             Text(snark)
                                 .font(.caption)
                                 .padding(.horizontal, 6)
@@ -111,9 +114,9 @@ struct RecapView: View {
 
     private func chainsSection(_ data: RecapData) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            sectionTitle("漂移链 Top 2")
+            sectionTitle(L("recap.section.chains"))
             if data.chains.isEmpty {
-                Text("本周还没有成型的漂移路径。").font(.callout).foregroundStyle(.secondary)
+                Text(L("recap.chains.empty")).font(.callout).foregroundStyle(.secondary)
             } else {
                 ForEach(Array(data.chains.enumerated()), id: \.offset) { _, chain in
                     HStack(spacing: 6) {
@@ -122,7 +125,7 @@ struct RecapView: View {
                             if index < chain.nodes.count - 1 { Text("→").foregroundStyle(.secondary) }
                         }
                         Spacer()
-                        Text("\(chain.count) 次 · 平均 \(Self.minutesLabel(chain.averageSeconds))")
+                        Text(L("recap.chains.summary", chain.count, Self.minutesLabel(chain.averageSeconds)))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -155,8 +158,12 @@ struct RecapView: View {
     }
 
     /// "0 分钟" 读起来像 bug —— 不足 1 分钟显示秒。
+    ///
+    /// 单位是文案的一部分（"分钟" / "min" 都在 `.strings` 里），而且超过一小时会进位：
+    /// 125 分钟读成 "125 分钟" 同样像 bug。两件事都在 `DurationLabel` 里，
+    /// 跟叙事共用一套词汇。
     static func minutesLabel(_ seconds: Int) -> String {
-        seconds < 60 ? "\(max(0, seconds)) 秒" : "\(seconds / 60) 分钟"
+        DurationLabel.text(seconds: seconds)
     }
 
     private func scoreColor(_ score: Int) -> Color {
@@ -172,9 +179,16 @@ struct RecapView: View {
 struct TimelineBar: View {
     let segments: [TimelineSegment]
 
+    /// 空轨（没在线的时段）底色。
+    ///
+    /// 原来写死 `0xF3F4F6`——那是一个浅灰，深色模式下就是横在界面里的一条白条。
+    /// 换成语义色：`quaternaryLabelColor` 在浅色下是极淡的黑、深色下是极淡的白，
+    /// 两种外观里都只是"底"，不会抢眼。
+    private static var trackColor: Color { Color(nsColor: .quaternaryLabelColor) }
+
     var body: some View {
         Canvas { context, size in
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0xF3F4F6)))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Self.trackColor))
             guard let dayStart = segments.first.map({ Calendar.current.startOfDay(for: $0.start) }) else { return }
             let daySeconds = 86_400.0
             for segment in segments {
@@ -193,7 +207,7 @@ struct TimelineBar: View {
         case .green: return Color(hex: 0x86EFAC)
         case .gray: return Color(hex: 0xD1D5DB)
         case .red: return Color(hex: 0xFCA5A5)
-        case .offline: return Color(hex: 0xF3F4F6)
+        case .offline: return Self.trackColor
         }
     }
 }
@@ -202,25 +216,52 @@ struct TimelineBar: View {
 struct HeatmapGrid: View {
     let heatmap: DriftHeatmap
 
-    private let weekdayLabels = ["一", "二", "三", "四", "五"]
+    /// 行标签是本地化 key，查表在渲染时做。
+    private let weekdayLabels = [
+        "recap.weekday.mon",
+        "recap.weekday.tue",
+        "recap.weekday.wed",
+        "recap.weekday.thu",
+        "recap.weekday.fri"
+    ]
+
+    /// 行标签列宽。中文一个字（"一"）就够，英文要放得下 "Mo"/"Th"。
+    private let labelColumnWidth: CGFloat = 24
+    private let cellWidth: CGFloat = 52
 
     var body: some View {
         let peak = max(1, heatmap.grid.flatMap { $0 }.max() ?? 1)
         Grid(horizontalSpacing: 2, verticalSpacing: 2) {
             ForEach(0..<DriftHeatmap.weekdayCount, id: \.self) { row in
                 GridRow {
-                    Text(weekdayLabels[row])
+                    Text(L(weekdayLabels[row]))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                        .frame(width: 16)
+                        .frame(width: labelColumnWidth)
                     ForEach(0..<DriftHeatmap.bucketCount, id: \.self) { col in
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color(hex: 0xFB923C).opacity(Double(heatmap.count(weekday: row, bucket: col)) / Double(peak)))
-                            .frame(width: 52, height: 16)
+                            .frame(width: cellWidth, height: 16)
                             .overlay(RoundedRectangle(cornerRadius: 2).stroke(.quaternary, lineWidth: 0.5))
                     }
                 }
             }
+            // 原来只有行标签、没有列标签——"哪一格是下午三点"全靠数格子。
+            GridRow {
+                Color.clear.frame(width: labelColumnWidth, height: 1)
+                ForEach(0..<DriftHeatmap.bucketCount, id: \.self) { col in
+                    Text(Self.hourColumnLabel(col))
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .frame(width: cellWidth)
+                }
+            }
         }
+    }
+
+    /// 第 `col` 格覆盖的小时区间，如 "8–10"。区间边界跟着 `DriftHeatmap` 的常量走。
+    static func hourColumnLabel(_ col: Int) -> String {
+        let start = DriftHeatmap.startHour + col * DriftHeatmap.bucketHours
+        return L("recap.heatmap.hour_column", start, start + DriftHeatmap.bucketHours)
     }
 }

@@ -5,6 +5,7 @@ public struct TimeThief: Equatable, Sendable {
     public let rank: Int
     public let label: String
     public let totalSeconds: Int
+    /// 自嘲文案的**本地化 key**（见 `TopThieves.snarkLibrary`），不是译文。
     public let snark: String?
 
     public init(rank: Int, label: String, totalSeconds: Int, snark: String?) {
@@ -13,13 +14,33 @@ public struct TimeThief: Equatable, Sendable {
         self.totalSeconds = totalSeconds
         self.snark = snark
     }
+
+    /// 给人看的自嘲文案：查表留到渲染时，所以换语言不用重算罪人榜。
+    public var localizedSnark: String? {
+        snark.map { L($0) }
+    }
 }
 
 /// 今日罪人榜聚合（daily-recap-spec §五.3）。
 public enum TopThieves {
 
     /// 自嘲文案库（v1 静态）。
-    public static let snarkLibrary = ["又赢了", "假装在学习", "摆烂", "意料之中", "今日 boss", "稳定输出"]
+    ///
+    /// 存的是**本地化 key，不是译文**。`compute` 用 `index % count` 取梗，
+    /// 所以**数组长度本身是有语义的**：如果直接把中文数组换成译文数组，
+    /// 某种语言多写或少写一条笑话，同一个名次就会突然换成另一个梗（甚至越界翻页）。
+    /// 长度在这里钉死成 6 条，查表推迟到渲染时（`TimeThief.localizedSnark`）。
+    ///
+    /// 译文不是直译而是**转创**：`摆烂` / `又赢了` 这类梗要在目标语言里重新找一个
+    /// 语气对得上的说法——调侃但不刺人。
+    public static let snarkLibrary = [
+        "thief.snark.0",
+        "thief.snark.1",
+        "thief.snark.2",
+        "thief.snark.3",
+        "thief.snark.4",
+        "thief.snark.5"
+    ]
 
     /// Deep Score 低于此值自动切严肃模式，不显示自嘲文案。
     public static let seriousModeScoreThreshold = 30
