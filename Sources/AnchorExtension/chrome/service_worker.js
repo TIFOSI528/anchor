@@ -21,10 +21,25 @@ function nowSeconds() {
   return Math.floor(Date.now() / 1000);
 }
 
+// 只上报普通网页地址。
+// data: / blob: / file: / view-source: 这些要么把整个内联页面塞进 URL（会被原样落库），
+// 要么暴露本地文件路径——分区判定根本用不到它们。顺手挡掉超长 URL。
+const MAX_URL_LENGTH = 2048;
+
+function isReportableURL(raw) {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > MAX_URL_LENGTH) return false;
+  try {
+    const protocol = new URL(raw).protocol;
+    return protocol === "https:" || protocol === "http:";
+  } catch (_) {
+    return false;
+  }
+}
+
 async function reportActiveTab() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    if (!tab || !tab.url) return;
+    if (!tab || !isReportableURL(tab.url)) return;
     socket.send({
       type: "tab_active",
       browser: "chrome",
@@ -70,7 +85,9 @@ async function handleCommand(message) {
   if (!message || typeof message.type !== "string") return;
   switch (message.type) {
     case "navigate":
-      if (message.url) {
+      // 只接受 http(s)。navigate 会直接改当前 tab 的地址，若不校验 scheme，
+      // 任何占住 127.0.0.1:17604 的本机进程都能把它当成 javascript:/data: 注入原语。
+      if (isReportableURL(message.url)) {
         const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         if (tab) chrome.tabs.update(tab.id, { url: message.url });
       }
