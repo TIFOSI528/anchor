@@ -453,3 +453,100 @@ final class NarrativeWiringTests: LocalizedTestCase {
         )
     }
 }
+
+/// 漂移计时的连续性。
+///
+/// 用户实测报的问题：「我在各种 app 间切来切去，时间会重置，尽管这些 app 都不是目标场景」。
+/// 根因是 `handleAppEnter` 的灰区分支恒返回 `elapsed: 0`——两个灰区 app 之间 ⌘Tab
+/// 就能把倒计时无限归零，friction 永远升不到位，整个产品机制被绕过。
+final class DriftContinuityTests: XCTestCase {
+
+    private let reducer = StateReducer()
+
+    private func gray(_ id: String) -> AppContext { AppContext(bundleId: id) }
+
+    /// 连续 tick 若干秒，返回累计后的状态。
+    private func tick(_ state: AnchorState, seconds: Int) -> AnchorState {
+        var current = state
+        for _ in 0..<seconds {
+            (current, _) = reducer.reduce(current, event: .tick(deltaSeconds: 1)) { _ in .gray }
+        }
+        return current
+    }
+
+    private func elapsed(of state: AnchorState) -> TimeInterval? {
+        if case let .drifting(elapsed, _) = state { return elapsed }
+        return nil
+    }
+
+    /// 核心回归：灰区之间互切必须**续算**，不能归零。
+    func testSwitchingBetweenGrayAppsCarriesElapsedTime() {
+        var state = AnchorState.drifting(elapsed: 0, currentApp: gray("com.a"))
+        state = tick(state, seconds: 100)
+        XCTAssertEqual(elapsed(of: state), 100)
+
+        // 切到另一个灰区 app。
+        (state, _) = reducer.reduce(state, event: .appActivated(gray("com.b"))) { _ in .gray }
+        XCTAssertEqual(elapsed(of: state), 100, "灰区互切不应重置漂移计时")
+
+        // 再切一次，再走 100 秒 → 应该是 200，而不是 100。
+        (state, _) = reducer.reduce(state, event: .appActivated(gray("com.c"))) { _ in .gray }
+        state = tick(state, seconds: 100)
+        XCTAssertEqual(elapsed(of: state), 200)
+    }
+
+    /// 反复横跳也无法把 friction 压住——这是这个 bug 真正的危害。
+    func testAlternatingGrayAppsCannotDodgeFrictionEscalation() {
+        var state = AnchorState.drifting(elapsed: 0, currentApp: gray("com.a"))
+        var lastLevel: Double = 0
+        // 模拟"每 10 秒 ⌘Tab 一次"，持续 4 分钟。
+        for round in 0..<24 {
+            state = tick(state, seconds: 10)
+            let target = gray(round.isMultiple(of: 2) ? "com.b" : "com.a")
+            let (next, effects) = reducer.reduce(state, event: .appActivated(target)) { _ in .gray }
+            state = next
+            for effect in effects {
+                if case let .renderFriction(level) = effect { lastLevel = level }
+            }
+        }
+        XCTAssertEqual(elapsed(of: state), 240, "来回切不应影响累计时长")
+        XCTAssertEqual(
+            lastLevel, FrictionLevel.heavy.blurIntensity,
+            "漂了 4 分钟，即便一直来回切，friction 也必须已经升到顶档"
+        )
+    }
+
+    /// 切换瞬间就要把 friction 补到正确档位，不能等下一个 tick。
+    func testCarriedDriftRendersCorrectFrictionImmediatelyOnSwitch() {
+        var state = AnchorState.drifting(elapsed: 0, currentApp: gray("com.a"))
+        state = tick(state, seconds: 200) // 已进 heavy 区
+        let (_, effects) = reducer.reduce(state, event: .appActivated(gray("com.b"))) { _ in .gray }
+        let rendered = effects.compactMap { effect -> Double? in
+            if case let .renderFriction(level) = effect { return level }
+            return nil
+        }
+        XCTAssertEqual(rendered.first, FrictionLevel.heavy.blurIntensity)
+    }
+
+    /// 回到绿区才是"漂移结束"：计时清零 + 清除 friction。
+    func testReturningToGreenResetsTheClock() {
+        var state = AnchorState.drifting(elapsed: 0, currentApp: gray("com.a"))
+        state = tick(state, seconds: 150)
+        let (green, effects) = reducer.reduce(state, event: .appActivated(AppContext(bundleId: "com.editor"))) { _ in .green }
+        XCTAssertNil(elapsed(of: green), "回到绿区不应还在 drifting")
+        XCTAssertTrue(effects.contains { if case .clearFriction = $0 { return true }; return false })
+
+        // 再次漂走时从 0 开始。
+        let (again, _) = reducer.reduce(green, event: .appActivated(gray("com.a"))) { _ in .gray }
+        XCTAssertEqual(elapsed(of: again), 0, "从绿区重新漂走应从 0 起算")
+    }
+
+    /// 规则变更 / 打开设置会走 reclassifyFrontmost → appActivated 同一路径，
+    /// 当前 app 仍是灰区时同样不该把计时清零（否则打开一次设置就能免疫 friction）。
+    func testReclassifyingTheSameGrayAppKeepsTheClock() {
+        var state = AnchorState.drifting(elapsed: 0, currentApp: gray("com.a"))
+        state = tick(state, seconds: 90)
+        (state, _) = reducer.reduce(state, event: .appActivated(gray("com.a"))) { _ in .gray }
+        XCTAssertEqual(elapsed(of: state), 90)
+    }
+}

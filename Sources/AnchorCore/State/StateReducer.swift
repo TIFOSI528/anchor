@@ -117,8 +117,26 @@ public struct StateReducer {
         switch classifier(ctx) {
         case .green:
             return (.green(currentApp: ctx), [.clearFriction])
+
         case .gray:
-            return (.drifting(elapsed: 0, currentApp: ctx), [])
+            // 漂移计时衡量的是「**连续**离开绿区多久」，不是「在当前这个 app 待了多久」。
+            //
+            // 此前这里恒为 `elapsed: 0`（`previousState` 声明了却从未使用），于是在两个
+            // 灰区 app 之间来回切就能把倒计时无限归零——friction 永远升不上去，
+            // 整个机制被一个 ⌘Tab 绕过。同一条路径还被 `reclassifyFrontmost` 复用，
+            // 所以打开设置 / 收编规则 / 切 Focus Lock 也会顺手把计时清零。
+            //
+            // 只有回到绿区才算「漂移结束」（`.green` 分支发 clearFriction），
+            // 灰区之间互切一律续算。
+            let carried: TimeInterval
+            if case let .drifting(elapsed, _) = previousState {
+                carried = elapsed
+            } else {
+                carried = 0
+            }
+            return (.drifting(elapsed: carried, currentApp: ctx),
+                    carried > 0 ? [.renderFriction(level: frictionCurve(for: carried))] : [])
+
         case .red:
             return (.red(currentApp: ctx), [.renderFriction(level: interveneEnabled ? 0.5 : 0)])
         }
