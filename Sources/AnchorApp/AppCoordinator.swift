@@ -808,7 +808,9 @@ final class AppCoordinator {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: Date())
         let weekStart = calendar.date(byAdding: .day, value: -6, to: dayStart) ?? dayStart
-        let presetName = presetLibrary.activePreset.name
+        // 用 displayName：内置场景的 name 是首次启动时冻进库里的，
+        // 直接用它会让英文环境的复盘写着「场景：写代码」。
+        let presetName = presetLibrary.activePreset.displayName
         let preset = presetLibrary.activePreset
         let engine = presetEngine
 
@@ -857,7 +859,7 @@ final class AppCoordinator {
         let calendar = Calendar.current
         let weekStart = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
         let preset = presetLibrary.activePreset
-        let presetName = preset.name
+        let presetName = preset.displayName // 同上：周建议文案也要跟随当前语言
 
         writeQueue.async { [weak self] in
             let drifts = (try? store.drifts(from: weekStart, to: Date())) ?? []
