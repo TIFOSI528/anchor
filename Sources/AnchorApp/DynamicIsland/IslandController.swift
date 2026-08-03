@@ -83,10 +83,13 @@ final class IslandController {
             let seconds = Int(elapsed)
             if seconds < 60 {
                 model.form = .drift(elapsed: seconds, threshold: driftThreshold)
-            } else if seconds < 180 {
-                model.form = .deepening(elapsed: seconds, target: snapBackName)
             } else {
-                model.form = .red(elapsed: seconds)
+                // 深度漂移继续用 .deepening（琥珀 + 「↩ 回到 X」），**不再切成 .red**。
+                // 灰区只是"未分类"，把它渲染成红区黑名单的「立即拉回」有两个问题：
+                // 1) VoiceOver 会念"红区"——对灰区漂移是错误信息；
+                // 2) 命令式口吻正是产品哲学明确拒绝的狱卒语气。
+                // friction 该加深照旧由 fog 曲线负责，岛上不必说谎。
+                model.form = .deepening(elapsed: seconds, target: snapBackName)
             }
             transition(to: .expanded)
 

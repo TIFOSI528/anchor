@@ -5,6 +5,7 @@ import Foundation
 /// 每个 Preset 有自己的白名单 / 黑名单规则，灰区为"未分类"自动 fallback。
 public struct Preset: Identifiable, Equatable, Sendable {
     public let id: String
+    /// 持久化的名字（写进 presets 表）。展示请用 `displayName`，别直接用它。
     public var name: String
     public var greenRules: [ZoneRule]
     public var redRules: [ZoneRule]
@@ -24,6 +25,25 @@ public struct Preset: Identifiable, Equatable, Sendable {
         self.redRules = redRules
         self.driftThresholdSeconds = driftThresholdSeconds
     }
+
+    /// 给人看的名字。**展示一律走这里，不要直接用 `name`。**
+    ///
+    /// 内置场景的 `name` 会在首次启动时被写进 SQLite（`PresetLibrary.loadOrSeed`），
+    /// 那一刻当时的语言就被**冻在库里**了：用户之后改系统语言，DB 里那一行还是老语言，
+    /// 永远不会重新翻译。所以这里不看 `name`，而是用**稳定的 `id`** 反查内置场景的
+    /// 本地化 key，查表推迟到渲染时——老库里的行也能跟着语言变。
+    ///
+    /// 用户自建的场景没有内置 key，回落到用户自己输入的 `name`（那本来就不该被翻译）。
+    public var displayName: String {
+        BuiltinPresets.localizedName(forId: id) ?? name
+    }
+
+    /// 只观察、不干预。
+    ///
+    /// 没有任何绿区规则时，「所有 app 都是灰区」——此时施加 friction 是纯粹的骚扰：
+    /// 橡皮筋的另一端没有系在任何东西上。这类场景（如内置「随便看看」、或用户刚新建
+    /// 还没填规则的空场景）只记录数据、显示状态，不糊屏幕、不锁滚动。
+    public var isObserveOnly: Bool { greenRules.isEmpty }
 }
 
 /// 一条规则。可以是 app bundle id，也可以是 URL pattern。
@@ -79,11 +99,30 @@ extension Preset {
 }
 
 /// 内置的默认 presets。首次启动时自动安装。
+///
+/// 三个内置场景名的持久化身份是 `id`（`builtin.write-code` …），名字只是展示。
+/// 这里用 `static var` 而不是 `static let`：`L()` 的查表跟着系统语言，
+/// 用 `let` 会在进程第一次访问时就把译文冻住。
 public enum BuiltinPresets {
 
-    public static let writeCode = Preset(
+    /// 内置场景 id → 名字的本地化 key。
+    ///
+    /// 有了这张表，`Preset.displayName` 才能只靠 `id` 就还原出当前语言的名字，
+    /// 不必相信 DB 里那个可能是几个月前、另一种语言写进去的 `name`。
+    private static let nameKeys = [
+        "builtin.write-code": "preset.builtin.write_code",
+        "builtin.read-docs": "preset.builtin.read_docs",
+        "builtin.casual": "preset.builtin.casual"
+    ]
+
+    /// 内置场景当前语言的名字；`id` 不是内置场景时返回 nil（由调用方回落）。
+    public static func localizedName(forId id: String) -> String? {
+        nameKeys[id].map { L($0) }
+    }
+
+    public static var writeCode: Preset { Preset(
         id: "builtin.write-code",
-        name: "写代码",
+        name: L("preset.builtin.write_code"),
         greenRules: [
             .app(bundleId: "com.microsoft.VSCode"),
             .app(bundleId: "com.apple.Terminal"),
@@ -100,11 +139,11 @@ public enum BuiltinPresets {
             .url(pattern: "youtube.com/"),
             .url(pattern: "github.com/trending*")
         ]
-    )
+    ) }
 
-    public static let readDocs = Preset(
+    public static var readDocs: Preset { Preset(
         id: "builtin.read-docs",
-        name: "读资料",
+        name: L("preset.builtin.read_docs"),
         greenRules: [
             .app(bundleId: "com.apple.Preview"),
             .app(bundleId: "md.obsidian"),
@@ -118,14 +157,14 @@ public enum BuiltinPresets {
             .url(pattern: "xiaohongshu.com/*"),
             .url(pattern: "bilibili.com/*")
         ]
-    )
+    ) }
 
-    public static let casualMode = Preset(
+    public static var casualMode: Preset { Preset(
         id: "builtin.casual",
-        name: "随便看看",
+        name: L("preset.builtin.casual"),
         greenRules: [], // 全部 fallback 到灰区
         redRules: []   // 不主动拦截，只做统计
-    )
+    ) }
 
-    public static let all: [Preset] = [writeCode, readDocs, casualMode]
+    public static var all: [Preset] { [writeCode, readDocs, casualMode] }
 }

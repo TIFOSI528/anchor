@@ -36,10 +36,9 @@ public final class SlackingCounter {
         self.day = dayKey()
     }
 
+    /// 用 locale 无关的稳定 key（见 `DayKey`）——否则改一次系统语言/地区就会误清零日计数。
     public static let systemDayKey: @Sendable () -> String = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: Date())
+        DayKey.key(for: Date())
     }
 
     /// 当前已用次数（自动处理跨天清零）。

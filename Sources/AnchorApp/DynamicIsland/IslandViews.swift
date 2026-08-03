@@ -57,7 +57,7 @@ struct IslandFormContent: View {
             .overlay(RightClickCatcher { model.onSecondaryClick() }) // 右键=完整菜单
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
-            .accessibilityHint("单击拉回 · 长按 3 秒合法摸鱼 · 上划暂停 · 右键打开菜单")
+            .accessibilityHint(L("island.a11y.gestures_hint"))
     }
 
     @ViewBuilder
@@ -68,6 +68,9 @@ struct IslandFormContent: View {
             Color.clear.frame(width: 2, height: 2)
 
         case let .drift(elapsed, threshold):
+            // 这一形态此前是唯一**没有背景**却写死 .white 的：在「顶部居中浮窗」位置下，
+            // DynamicNotchKit 用 .popover 材质（浅色模式下近白），于是倒计时白字白底、完全看不见。
+            // 补上与其它三态一致的胶囊底。
             HStack(spacing: 8) {
                 CountdownRing(
                     progress: threshold > 0 ? min(1, Double(elapsed) / Double(threshold)) : 0,
@@ -78,12 +81,15 @@ struct IslandFormContent: View {
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
                     .foregroundStyle(.white)
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 3)
+            .background(.black.opacity(0.85), in: Capsule())
 
         case let .deepening(elapsed, target):
             HStack(spacing: 6) {
                 Text(IslandViewModel.clock(elapsed))
                     .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                Text("↩ 回到 \(target ?? "绿区")")
+                Text(L("island.snap_back_to", target ?? L("island.snap_back_fallback")))
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
             }
@@ -93,7 +99,7 @@ struct IslandFormContent: View {
             .background(Color(hex: 0xD97706), in: Capsule())
 
         case let .red(elapsed):
-            Text("立即拉回 · 已离开 \(Self.duration(elapsed))")
+            Text(L("island.red_away", Self.duration(elapsed)))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12)
@@ -119,17 +125,21 @@ struct IslandFormContent: View {
 
     private var accessibilityText: String {
         switch model.form {
-        case .idle: return "Anchor：绿区"
-        case let .drift(elapsed, _): return "漂移中，已 \(Self.duration(elapsed))"
-        case let .deepening(elapsed, target): return "漂移加深，已 \(Self.duration(elapsed))，可拉回 \(target ?? "绿区")"
-        case let .red(elapsed): return "红区，已离开 \(Self.duration(elapsed))"
-        case let .slacking(remaining, _): return "合法摸鱼，剩余 \(Self.duration(remaining))"
+        case .idle: return L("island.a11y.green")
+        case let .drift(elapsed, _): return L("island.a11y.drifting", Self.duration(elapsed))
+        case let .deepening(elapsed, target):
+            return L("island.a11y.deepening", Self.duration(elapsed), target ?? L("island.snap_back_fallback"))
+        case let .red(elapsed): return L("island.a11y.red", Self.duration(elapsed))
+        case let .slacking(remaining, _): return L("island.a11y.slacking", Self.duration(remaining))
         }
     }
 
     /// 时长文案：< 60s 用"X 秒"，之后用 m:ss——红区文字不会长成"已离开 600 秒"。
+    /// m:ss 是纯数字格式，各语言通用，不进译文表。
     static func duration(_ seconds: Int) -> String {
-        seconds < 60 ? "\(max(0, seconds)) 秒" : IslandViewModel.clock(seconds)
+        seconds < 60
+            ? L("island.duration_seconds", Int64(max(0, seconds)))
+            : IslandViewModel.clock(seconds)
     }
 }
 
@@ -138,19 +148,42 @@ struct IslandCompactDot: View {
     @ObservedObject var model: IslandViewModel
 
     var body: some View {
-        BreathingDot(color: dotColor)
-            .frame(width: 18, height: 14) // 命中区比 8pt 圆点大一圈
-            .contentShape(Rectangle())
-            .onTapGesture { model.onDotTap() }
-            .overlay(RightClickCatcher { model.onSecondaryClick() })
-            .accessibilityLabel(accessibilityText)
-            .accessibilityHint("点击或右键打开 Anchor 菜单")
+        ZStack {
+            BreathingDot(color: dotColor)
+            // 非颜色线索：整个产品语义此前只靠这颗 8pt 圆点的**色相**表达
+            // （绿=专注 / 琥珀=漂移 / 红=红区 / 蓝=锁定 / 灰=暂停）。
+            // 对红绿色盲（约 8% 男性）来说 8px 的绿与红是最经典的混淆对，
+            // 等于整个稳态无法辨认。这里叠一个极小的符号做冗余编码。
+            if let glyph = stateGlyph {
+                Image(systemName: glyph)
+                    .font(.system(size: 6, weight: .black))
+                    .foregroundStyle(.black.opacity(0.75))
+                    .allowsHitTesting(false)
+            }
+        }
+        .frame(width: 18, height: 14) // 命中区比 8pt 圆点大一圈
+        .contentShape(Rectangle())
+        .onTapGesture { model.onDotTap() }
+        .overlay(RightClickCatcher { model.onSecondaryClick() })
+        .accessibilityLabel(accessibilityText)
+        .accessibilityHint(L("island.a11y.dot_hint"))
+    }
+
+    /// 叠在圆点上的形状线索。绿区（一切正常）保持纯圆点——好工具在绿区应该隐形。
+    private var stateGlyph: String? {
+        if model.paused { return "pause" }
+        switch model.form {
+        case .idle: return model.locked ? "lock" : nil
+        case .drift, .deepening: return "exclamationmark"
+        case .slacking: return "cup.and.saucer"
+        case .red: return "xmark"
+        }
     }
 
     private var accessibilityText: String {
-        if model.paused { return "Anchor：已暂停，点击恢复" }
-        if model.locked { return "Anchor：已锁定" }
-        return "Anchor"
+        if model.paused { return L("island.a11y.paused") }
+        if model.locked { return L("island.a11y.locked") }
+        return "Anchor" // 品名，不翻译
     }
 
     private var dotColor: Color {
@@ -204,6 +237,31 @@ final class BreathingDotView: NSView {
         dot.backgroundColor = dotColor.cgColor
         layer?.addSublayer(dot)
 
+        applyBreathingIfAllowed()
+
+        // 系统「减少动态效果」是可以随时改的，跟着走。
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(reduceMotionChanged),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil
+        )
+    }
+
+    @objc private func reduceMotionChanged() {
+        applyBreathingIfAllowed()
+    }
+
+    /// 这颗点是**常驻**元素，无限呼吸对前庭功能障碍 / 偏头痛用户是持续触发源，
+    /// 而此前它在 `init` 里无条件安装，没有任何代码路径能停下来。
+    /// 现在尊重系统「辅助功能 → 显示 → 减少动态效果」。
+    private func applyBreathingIfAllowed() {
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            dot.removeAnimation(forKey: "breath")
+            dot.opacity = 1
+            return
+        }
+        guard dot.animation(forKey: "breath") == nil else { return }
         let breath = CABasicAnimation(keyPath: "opacity")
         breath.fromValue = 0.35
         breath.toValue = 1.0
@@ -213,6 +271,10 @@ final class BreathingDotView: NSView {
         breath.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
         breath.isRemovedOnCompletion = false
         dot.add(breath, forKey: "breath")
+    }
+
+    deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
 
     @available(*, unavailable)

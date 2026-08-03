@@ -48,6 +48,9 @@ final class AppCoordinator {
     // MARK: - timers & transient state
 
     private var workspaceObserver: NSObjectProtocol?
+    private var sleepObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
+    private var midnightTimer: Timer?
     private var tickTimer: Timer?
     private var checkpointTimer: Timer?
     private var recapTimer: Timer?
@@ -76,12 +79,17 @@ final class AppCoordinator {
 
         configureUICallbacks()
         recoverCrashedSessionIfAny()
+        pruneOldDataIfNeeded()
         openSession()
+        // 上次退出时若还连着扩展，这个键会留着 true——不重置的话设置里会谎报"已连接"。
+        defaults.set(false, forKey: SettingsKey.extensionConnected)
 
         // rebuildReducer 内部会对当前前台 app 立即重判（此时 session/日志器已就绪）。
         rebuildReducer(for: presetLibrary.activePreset)
 
         observeFrontmostApp()
+        observeSleepWake()
+        scheduleMidnightRollover()
         startDaemon()
         if defaults.object(forKey: SettingsKey.hotkeysEnabled) == nil
             || defaults.bool(forKey: SettingsKey.hotkeysEnabled) {
@@ -94,20 +102,28 @@ final class AppCoordinator {
     }
 
     func stop() {
-        if let observer = workspaceObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(observer)
-            workspaceObserver = nil
+        let center = NSWorkspace.shared.notificationCenter
+        for observer in [workspaceObserver, sleepObserver, wakeObserver].compactMap({ $0 }) {
+            center.removeObserver(observer)
         }
+        workspaceObserver = nil
+        sleepObserver = nil
+        wakeObserver = nil
         hotkeys.stop()
         tickTimer?.invalidate()
         checkpointTimer?.invalidate()
         recapTimer?.invalidate()
         weeklyTimer?.invalidate()
+        midnightTimer?.invalidate()
         redBuffer?.cancel()
         closeSession()
         daemon.stop()
         fog.clear()
         inputFriction.update(level: 0)
+        // closeSession 的写是 `writeQueue.async`，而 applicationWillTerminate 返回后进程立刻退出——
+        // 不等一下，收尾写就基本执行不到：ended_at 永远是 NULL（下次启动把正常退出误判成崩溃恢复），
+        // 最后一条漂移记录直接丢失。这里加一道栅栏，把终态写等落盘。
+        writeQueue.sync {}
     }
 
     // MARK: - capture（一键收编）
@@ -151,7 +167,7 @@ final class AppCoordinator {
     /// 收编进绿/红区（互斥），`.gray` = 移回灰区；变更后立即对前台 app 重新判定。
     func captureCurrent(as zone: ZoneClassification) {
         guard let target = captureTarget else {
-            island.flashHint("当前没有可收编的对象")
+            island.flashHint(L("hint.no_capture_target"))
             return
         }
         switch target.mode {
@@ -162,9 +178,9 @@ final class AppCoordinator {
         }
         // capture → upsert → onActivePresetChange → rebuildReducer → reclassifyFrontmost
         switch zone {
-        case .green: island.flashHint("已加入绿区：\(target.name)")
-        case .red: island.flashHint("已加入红区：\(target.name)")
-        case .gray: island.flashHint("已移回灰区：\(target.name)")
+        case .green: island.flashHint(L("hint.added_to_green", target.name))
+        case .red: island.flashHint(L("hint.added_to_red", target.name))
+        case .gray: island.flashHint(L("hint.moved_to_gray", target.name))
         }
     }
 
@@ -209,7 +225,7 @@ final class AppCoordinator {
     func engageLock(_ lock: FocusLock) {
         focusLock = lock
         island.model.locked = true
-        island.flashHint("已锁定：\(lock.label)")
+        island.flashHint(L("hint.locked", lock.label))
         reclassifyFrontmost()
     }
 
@@ -217,7 +233,7 @@ final class AppCoordinator {
         guard focusLock != nil else { return }
         focusLock = nil
         island.model.locked = false
-        island.flashHint("已解除锁定")
+        island.flashHint(L("hint.unlocked"))
         reclassifyFrontmost()
     }
 
@@ -229,7 +245,7 @@ final class AppCoordinator {
                   let lock = candidates.page ?? candidates.app?.lock {
             engageLock(lock)
         } else {
-            island.flashHint("当前没有可锁定的对象")
+            island.flashHint(L("hint.no_lock_target"))
         }
     }
 
@@ -245,9 +261,12 @@ final class AppCoordinator {
         currentSlackMode = slackingPolicy.mode(usedToday: used)
         slackingCounter.increment()
         handleEvent(.islandLongPressed)
+        // 中文的「第 N 次」是序数，英语等语言没有对应的位置参数写法——文案改成中性计数，
+        // 由译文自己决定怎么说；分钟数也从字面量里抽成参数，改配置不必改译文。
+        let count = Int64(used + 1)
         island.flashHint(currentSlackMode == .hard
-            ? "今天第 \(used + 1) 次摸鱼（已到硬上限，到点强制拉回）"
-            : "合法摸鱼 5 分钟（今天第 \(used + 1) 次）")
+            ? L("hint.slack_started_hard", count)
+            : L("hint.slack_started", Int64(reducer.slackingDuration / 60), count))
     }
 
     func pauseGesture() {
@@ -265,7 +284,7 @@ final class AppCoordinator {
         guard case .paused = state else { return }
         handleEvent(.sessionStarted)
         reclassifyFrontmost()
-        island.flashHint("已恢复看护")
+        island.flashHint(L("hint.resumed"))
     }
 
     // MARK: - recap
@@ -298,6 +317,85 @@ final class AppCoordinator {
                 self?.handleFrontmostChange(bundleId: bundleId)
             }
         }
+    }
+
+    /// 睡眠 / 唤醒。
+    ///
+    /// 没有这段的话，合盖一晚等于"连续专注 8 小时"：`SessionAccumulator` 和 `DriftLogger`
+    /// 都用墙上时钟算区间时长，于是 Deep Score、最长连续专注、罪人榜全被灌水
+    /// （实测形态：合盖前停在 YouTube，第二天罪人榜写「#1 youtube.com · 666 分钟」）。
+    /// 处理办法：入睡当作"下线"把当前区间收口，醒来重新判定前台。
+    private func observeSleepWake() {
+        let center = NSWorkspace.shared.notificationCenter
+        sleepObserver = center.addObserver(
+            forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.handleWillSleep() }
+        }
+        wakeObserver = center.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.handleDidWake() }
+        }
+    }
+
+    private func handleWillSleep() {
+        let now = Date()
+        // 收口当前区间与进行中的漂移，别把睡眠时长算进任何一边。
+        // 用 `.sessionEnd` 而不是 `.autoReturn`：用户并没有"回到绿区"，
+        // 是这段被测量的时间到此为止了——复盘里的归因得对得上事实。
+        if let closed = driftLogger?.returnToGreen(at: now, reason: .sessionEnd) {
+            insert(closed)
+        }
+        accumulator.transition(to: nil, at: now)
+        persistSession(endedAt: nil)
+        fog.clear()
+        inputFriction.update(level: 0)
+        tickTimer?.invalidate()
+        tickTimer = nil
+    }
+
+    private func handleDidWake() {
+        // 跨过午夜就换一天的 session，否则今天的数据会记到昨天名下。
+        if DayKey.key(for: sessionStartedAt) != DayKey.key(for: Date()) {
+            rollOverSession()
+        }
+        accumulator.transition(to: zone(of: state), at: Date())
+        reclassifyFrontmost()
+        scheduleMidnightRollover()
+    }
+
+    /// 本地午夜切分 session。
+    ///
+    /// 菜单栏 app 会一直挂着，而 `composeRecap` 查的是 `started_at >= 今天零点`——
+    /// 一个从不换 session 的进程，从第二天起这个查询恒为空，于是 22:00 复盘显示
+    /// Deep Score **0**、时间线全空、叙事写"今天你有 0 分钟的真正专注"，
+    /// 而罪人榜却有数据。产品的头号日常交付物从第二天开始就是坏的。
+    private func scheduleMidnightRollover() {
+        midnightTimer?.invalidate()
+        let calendar = Calendar.current
+        guard let nextMidnight = calendar.nextDate(
+            after: Date(),
+            matching: DateComponents(hour: 0, minute: 0, second: 5),
+            matchingPolicy: .nextTime
+        ) else { return }
+        // 每次触发后重新算下一次，而不是用固定 86400 间隔——这样夏令时切换不会把时刻带偏。
+        let timer = Timer(fire: nextMidnight, interval: 0, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.rollOverSession()
+                self.scheduleMidnightRollover()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        midnightTimer = timer
+    }
+
+    /// 收口当前 session 并立刻开一份新的（跨天 / 唤醒后跨天时调用）。
+    private func rollOverSession() {
+        closeSession()
+        openSession()
+        accumulator.transition(to: zone(of: state), at: Date())
     }
 
     private func handleFrontmostChange(bundleId: String) {
@@ -346,14 +444,27 @@ final class AppCoordinator {
             if let lock { return lock.classify(ctx, preset: preset, engine: presetEngine) }
             return presetEngine.classify(ctx, in: preset)
         }
-        bookkeep(from: state, to: next, event: event)
+        let askToExtendSlack = bookkeep(from: state, to: next, event: event)
         state = next
         apply(effects)
         manageTickTimer()
+        // 必须等状态落定后再弹模态框。
+        // 之前 bookkeep 里直接 runModal()：模态是嵌套 run loop，用户点「再来 5 分钟」会
+        // 重入 handleEvent 把 state 设成 .slacking，等模态返回，外层这一帧再执行
+        // `state = next`（.offline）把刚发的 5 分钟**覆盖掉**——功能在肯定分支上完全失效，
+        // 且已经扣掉了一次日额度。
+        if askToExtendSlack {
+            DispatchQueue.main.async { [weak self] in
+                MainActor.assumeIsolated { self?.askForSlackExtension() }
+            }
+        }
     }
 
     /// 状态迁移时的记账：时间累计、漂移日志、绿区栈、红区缓冲。
-    private func bookkeep(from old: AnchorState, to new: AnchorState, event: AnchorEvent) {
+    ///
+    /// **纯记账，不改 state、不弹模态**。返回值 = 是否需要在状态落定后询问「还要 5 分钟吗」。
+    @discardableResult
+    private func bookkeep(from old: AnchorState, to new: AnchorState, event: AnchorEvent) -> Bool {
         let now = Date()
         accumulator.transition(to: zone(of: new), at: now)
 
@@ -377,10 +488,11 @@ final class AppCoordinator {
         default: break
         }
 
-        // 软上限摸鱼到点：问"还要 5 分钟吗？"
+        // 软上限摸鱼到点：交给调用方在状态落定后再问"还要 5 分钟吗？"
         if case .slacking = old, case .offline = new, currentSlackMode == .soft {
-            askForSlackExtension()
+            return true
         }
+        return false
     }
 
     private func apply(_ effects: [SideEffect]) {
@@ -395,6 +507,7 @@ final class AppCoordinator {
                 fog.clear()
                 inputFriction.update(level: 0)
                 daemon.broadcast(command: .frictionClear)
+                browserOverlayActive = false
             case .playHaptic(let type):
                 playHaptic(type)
             case .writeLog(let entry):
@@ -424,17 +537,40 @@ final class AppCoordinator {
         DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: work)
     }
 
+    /// 「没有锚点，就没有橡皮筋。」
+    ///
+    /// friction 的全部意义是**把你拉回某个地方**。如果这一刻压根没有可拉回的目标
+    /// （刚装上还没进过任何绿区 app、或当前场景没有绿区规则），糊屏幕就只是无来由的惩罚：
+    /// 用户既不知道为什么，也无处可去——单击岛也只会弹"暂无可拉回的目标"。
+    ///
+    /// 这一条同时修掉三个首启事故：新用户装完在 Finder 里被糊、点岛无效后下一秒又被糊回来、
+    /// 以及「随便看看」这个本该是逃生口的场景反而永久重度模糊。
+    private var hasAnchor: Bool {
+        lastGreen.snapBackTarget != nil
+    }
+
+    /// 浏览器内遮罩是否已下发（避免 1Hz 重复广播，也保证降级时能撤掉）。
+    private var browserOverlayActive = false
+
     private func applyFriction(level: Double) {
-        fog.render(level: level)
-        inputFriction.update(level: level)
-        if level >= FrictionLevel.heavy.blurIntensity {
-            daemon.broadcast(command: .frictionOverlay(level: level))
+        let effective = hasAnchor ? level : 0
+        fog.render(level: effective)
+        inputFriction.update(level: effective)
+        if effective >= FrictionLevel.heavy.blurIntensity {
+            daemon.broadcast(command: .frictionOverlay(level: effective))
+            browserOverlayActive = true
+        } else if browserOverlayActive {
+            // 此前只在"升到 heavy"时下发遮罩，却从不在降级时撤销：
+            // 深度漂移后切到另一个灰区 tab/app，本地雾散了，但页面上的遮罩会一直留着
+            // （content script 只认显式的 friction_clear），进红区更是永久留存。
+            daemon.broadcast(command: .frictionClear)
+            browserOverlayActive = false
         }
     }
 
     private func performSnapBack() {
         guard let target = lastGreen.snapBackTarget else {
-            island.flashHint("暂无可拉回的目标，请先访问绿区 app")
+            island.flashHint(L("hint.no_snapback_target"))
             return
         }
         if let url = target.url,
@@ -460,10 +596,12 @@ final class AppCoordinator {
 
     private func askForSlackExtension() {
         let alert = NSAlert()
-        alert.messageText = "5 分钟到了"
-        alert.informativeText = "还要 5 分钟吗？（今天剩余软上限 \(max(0, 3 - slackingCounter.usedToday)) 次）"
-        alert.addButton(withTitle: "回去工作")
-        alert.addButton(withTitle: "再来 5 分钟")
+        let minutes = Int64(reducer.slackingDuration / 60)
+        alert.messageText = L("alert.slack_extend.title", minutes)
+        let remaining = max(0, slackingPolicy.softLimitPerDay - slackingCounter.usedToday)
+        alert.informativeText = L("alert.slack_extend.message", minutes, Int64(remaining))
+        alert.addButton(withTitle: L("alert.slack_extend.back_to_work"))
+        alert.addButton(withTitle: L("alert.slack_extend.extend", minutes))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertSecondButtonReturn {
             slackGesture()
@@ -515,6 +653,67 @@ final class AppCoordinator {
     }
 
     // MARK: - session persistence (PR #23)
+
+    /// 启动时按留存策略清理老数据（默认 90 天，可在设置里调到"永久保留"）。
+    /// 无上限增长既是隐私负担也是性能负担——但删除是用户的选择，所以设置里能关。
+    private func pruneOldDataIfNeeded() {
+        guard let store else { return }
+        let stored = defaults.object(forKey: SettingsKey.retentionDays) as? Int
+        let days = stored ?? SessionStore.defaultRetentionDays
+        guard days > 0 else { return } // 0 = 永久保留
+        writeQueue.async {
+            if let removed = try? store.prune(olderThanDays: days), removed > 0 {
+                NSLog("[Anchor] pruned %d rows older than %d days", removed, days)
+            }
+        }
+    }
+
+    // MARK: - 数据导出 / 清除（Settings「隐私与数据」调用）
+
+    /// 导出全部数据到用户选定的文件。I/O 在写队列上，回调回主线程。
+    func exportData(to url: URL, completion: @escaping @MainActor (Error?) -> Void) {
+        persistSession(endedAt: nil) // 让进行中的数据也进库，导出才是完整的
+        guard let store else {
+            Task { @MainActor in completion(SessionStoreUnavailable()) }
+            return
+        }
+        writeQueue.async {
+            var failure: Error?
+            do {
+                try store.exportJSON().write(to: url, options: .atomic)
+            } catch {
+                failure = error
+            }
+            Task { @MainActor in completion(failure) }
+        }
+    }
+
+    /// 清除全部历史（保留 preset），并把进行中的 session 重新开一份。
+    func wipeHistory(completion: @escaping @MainActor (Error?) -> Void) {
+        guard let store else {
+            Task { @MainActor in completion(SessionStoreUnavailable()) }
+            return
+        }
+        writeQueue.async { [weak self] in
+            var failure: Error?
+            do {
+                try store.wipeHistory()
+            } catch {
+                failure = error
+            }
+            Task { @MainActor in
+                guard let self else { completion(failure); return }
+                // 刚被删掉的 session 不能继续往里累计，开一份干净的。
+                self.accumulator = SessionAccumulator()
+                self.openSession()
+                completion(failure)
+            }
+        }
+    }
+
+    struct SessionStoreUnavailable: LocalizedError {
+        var errorDescription: String? { L("error.local_database_unavailable") }
+    }
 
     private func openSession() {
         sessionId = UUID().uuidString
@@ -590,7 +789,7 @@ final class AppCoordinator {
         let nextRecap = RecapScheduler.nextDaily(hour: 22, after: Date())
         recapTimer = Timer(fire: nextRecap, interval: 86_400, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.island.flashHint("今日复盘好了，点菜单栏查看")
+                self?.island.flashHint(L("hint.recap_ready"))
                 self?.openRecapWindow()
             }
         }
@@ -624,10 +823,10 @@ final class AppCoordinator {
                     completion(nil)
                     return
                 }
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
+                // 稳定 key（locale 无关）——它同时是 daily_recaps 的主键，
+                // 显示时由 RecapView 转成本地化文案（见 DayKey）。
                 let data = RecapComposer.compose(
-                    dateLabel: formatter.string(from: Date()),
+                    dateLabel: DayKey.key(for: Date()),
                     presetName: presetName,
                     sessions: sessions,
                     todayDrifts: todayDrifts,
@@ -681,10 +880,10 @@ final class AppCoordinator {
     /// 每周一条、可解释、可一键 apply（daily-recap-spec §六）。
     private func present(_ suggestion: Suggestion) {
         let alert = NSAlert()
-        alert.messageText = "本周建议"
-        alert.informativeText = "\(suggestion.message)\n\n依据：\(suggestion.rationale)"
-        alert.addButton(withTitle: "应用")
-        alert.addButton(withTitle: "这周先不用")
+        alert.messageText = L("alert.weekly_suggestion.title")
+        alert.informativeText = L("alert.weekly_suggestion.body", suggestion.message, suggestion.rationale)
+        alert.addButton(withTitle: L("alert.weekly_suggestion.apply"))
+        alert.addButton(withTitle: L("alert.weekly_suggestion.skip"))
         NSApp.activate(ignoringOtherApps: true)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
@@ -698,7 +897,7 @@ final class AppCoordinator {
             presetLibrary.removeGreenRule(rule)
             saveRevertInfo(kind: "presetAdjust", line: PresetSerialization.line(for: rule))
         case .rhythm:
-            island.flashHint("可在设置里给 \(suggestion.target) 启用更严格的场景")
+            island.flashHint(L("hint.rhythm_suggestion", suggestion.target))
         }
     }
 
@@ -762,7 +961,11 @@ final class AppCoordinator {
     }
 
     private func rebuildReducer(for preset: Preset) {
-        reducer = StateReducer(driftThreshold: preset.driftThresholdSeconds, slackingDuration: 300)
+        reducer = StateReducer(
+            driftThreshold: preset.driftThresholdSeconds,
+            slackingDuration: 300,
+            interveneEnabled: !preset.isObserveOnly
+        )
         renderIsland()
         reclassifyFrontmost() // 规则/preset 变更立即生效（设计稿：互斥 + 立即重判）
     }

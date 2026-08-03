@@ -14,12 +14,18 @@ public struct StateReducer {
     /// 合法摸鱼时长（秒）。
     public let slackingDuration: TimeInterval
 
+    /// 是否施加 friction。`false` = 只观察记录、不干预（见 `Preset.isObserveOnly`）：
+    /// 没有任何绿区规则的场景（如「随便看看」）不该把屏幕糊成一片。
+    public let interveneEnabled: Bool
+
     public init(
         driftThreshold: TimeInterval = 60,
-        slackingDuration: TimeInterval = 300
+        slackingDuration: TimeInterval = 300,
+        interveneEnabled: Bool = true
     ) {
         self.driftThreshold = driftThreshold
         self.slackingDuration = slackingDuration
+        self.interveneEnabled = interveneEnabled
     }
 
     /// 核心 reduce 函数。
@@ -56,6 +62,18 @@ public struct StateReducer {
             // (see dynamic-island-spec.md §II for the full curve).
             return (state, [])
 
+        // MARK: - paused（必须排在手势之前）
+        //
+        // `case (_, .islandTapped)` 这类通配手势如果排在前面，会先匹配上：
+        // 暂停期间按 ⌃⌥⌘B / 点菜单「合法摸鱼」就会把 .paused 直接变成 .slacking，
+        // 绕过 resumeGesture()——暂停理由被丢掉，前台也不会重新判定。
+        case (.paused, .sessionStarted):
+            // 恢复看护：回到 offline，下一个 appActivated（coordinator 立即补发）重新分类。
+            return (.offline, [.clearFriction])
+
+        case (.paused, _):
+            return (state, []) // 其余事件一律吸收，直到显式恢复
+
         // MARK: - gestures
         case (_, .islandTapped):
             return (state, [.snapBackToGreen, .playHaptic(.generic), .clearFriction])
@@ -84,14 +102,6 @@ public struct StateReducer {
         case (.slacking, .slackingTimedOut):
             return (.offline, [.snapBackToGreen, .playHaptic(.levelChange)])
 
-        // MARK: - paused / offline
-        case (.paused, .sessionStarted):
-            // 恢复看护：回到 offline，下一个 appActivated（coordinator 立即补发）重新分类。
-            return (.offline, [.clearFriction])
-
-        case (.paused, _):
-            return (state, []) // 其余事件一律吸收，直到显式恢复
-
         default:
             return (state, [])
         }
@@ -110,14 +120,16 @@ public struct StateReducer {
         case .gray:
             return (.drifting(elapsed: 0, currentApp: ctx), [])
         case .red:
-            return (.red(currentApp: ctx), [.renderFriction(level: 0.5)])
+            return (.red(currentApp: ctx), [.renderFriction(level: interveneEnabled ? 0.5 : 0)])
         }
     }
 
     /// 漂移时间 → friction 强度（0.0–1.0）。
-    /// 见 docs/dynamic-island-spec.md §II 的曲线表；分段统一由 `FrictionLevel` 定义。
+    /// 见 docs/dynamic-island-spec.md §II 的曲线表；分段统一由 `FrictionLevel` 定义，
+    /// 并按场景的 `driftThreshold` 等比缩放。
     private func frictionCurve(for elapsed: TimeInterval) -> Double {
-        FrictionLevel.forElapsed(elapsed).blurIntensity
+        guard interveneEnabled else { return 0 }
+        return FrictionLevel.forElapsed(elapsed, threshold: driftThreshold).blurIntensity
     }
 }
 

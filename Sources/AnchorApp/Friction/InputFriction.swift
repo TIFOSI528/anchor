@@ -31,7 +31,17 @@ final class InputFriction {
             place: .headInsertEventTap,
             options: .defaultTap,
             eventsOfInterest: mask,
-            callback: { _, _, _, _ in nil }, // 吞掉滚动
+            callback: { _, _, event, _ in
+                // **放过投给 Anchor 自己的滚动**。
+                // 此前这里无条件返回 nil，等于全会话吞掉滚轮——包括 Anchor 自己的
+                // 设置窗口和复盘窗口（两者都是 ScrollView）。于是"深度漂移时锁定滚动"
+                // 一旦触发，用户就滚不到那个用来关掉它的开关，被自己的设置困住。
+                let targetPID = event.getIntegerValueField(.eventTargetUnixProcessID)
+                if targetPID == Int64(ProcessInfo.processInfo.processIdentifier) {
+                    return Unmanaged.passUnretained(event)
+                }
+                return nil // 其余照旧吞掉
+            },
             userInfo: nil
         ) else { return }
         self.tap = tap

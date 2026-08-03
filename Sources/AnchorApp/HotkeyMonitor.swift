@@ -33,18 +33,30 @@ final class HotkeyMonitor {
         globalMonitor = nil
     }
 
+    /// 物理键位（ANSI virtual key code）。
+    ///
+    /// 此前用 `charactersIgnoringModifiers` 判定，那拿到的是**经键盘布局映射后**的字符：
+    /// AZERTY 上 QWERTY 的 A 位于 Q 键处，Dvorak / Colemak 同理，
+    /// 非拉丁布局（西里尔 / 希腊 / 阿拉伯）下含 `.control` 的组合更不保证有拉丁替换。
+    /// 结果是文档写着 ⌃⌥⌘A，用户按下去却什么都不发生。按 keyCode 匹配则与布局无关。
+    private enum Key: UInt16 {
+        case a = 0
+        case b = 11
+        case l = 37
+        case p = 35
+    }
+
     private func handle(_ event: NSEvent) -> Bool {
         let required: NSEvent.ModifierFlags = [.control, .option, .command]
         guard event.modifierFlags.intersection([.option, .command, .control, .shift]) == required,
-              let key = event.charactersIgnoringModifiers?.lowercased() else {
+              let key = Key(rawValue: event.keyCode) else {
             return false
         }
         switch key {
-        case "a": onSnapBack(); return true
-        case "b": onSlack(); return true
-        case "p": onPause(); return true
-        case "l": onLockToggle(); return true
-        default: return false
+        case .a: onSnapBack(); return true
+        case .b: onSlack(); return true
+        case .p: onPause(); return true
+        case .l: onLockToggle(); return true
         }
     }
 }

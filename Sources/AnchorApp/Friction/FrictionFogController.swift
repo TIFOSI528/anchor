@@ -16,18 +16,28 @@ final class FrictionFogController {
 
     var isEnabled: () -> Bool = { true }
 
+    /// 顶格不透明度。系统开了「降低透明度」时压到更低——
+    /// `.behindWindow` 的 vibrancy 在那种设置下会退化成不透明填充，
+    /// 于是最不能承受遮挡的用户反而得到最实的一层雾。这是反了的。
+    private var maximumAlpha: Double {
+        NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency ? 0.45 : 1.0
+    }
+
     func render(level: Double) {
         guard isEnabled(), level > 0 else {
             clear()
             return
         }
         ensureWindows()
-        currentLevel = level
+        let capped = min(level, maximumAlpha)
+        currentLevel = capped
+        // 「减少动态效果」时不做淡入，直接到位。
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.2
+            context.duration = reduceMotion ? 0 : 0.2
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
             for window in windows {
-                window.animator().alphaValue = CGFloat(level)
+                window.animator().alphaValue = CGFloat(capped)
             }
         }
     }
