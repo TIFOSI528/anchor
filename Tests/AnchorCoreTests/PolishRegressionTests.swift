@@ -550,3 +550,85 @@ final class DriftContinuityTests: XCTestCase {
         XCTAssertEqual(elapsed(of: state), 90)
     }
 }
+
+/// 氛围配方的取样曲线。
+///
+/// 这些数值就是用户漂走时看到的东西，所以边界必须精确：
+/// spec（dynamic-island-spec.md:43-46）要求 30s 前屏幕**完全无变化**，
+/// 1–3min 档是"饱和度↓70%"。
+final class AmbienceProfileTests: XCTestCase {
+
+    func testCalmProfileLeavesScreenUntouchedBelowFirstStage() {
+        let stop = AmbienceProfile.calm.sample(at: 0)
+        XCTAssertEqual(stop.saturation, 1.0, "30s 之前屏幕不该有任何变化")
+        XCTAssertEqual(stop.vignette, 0.0)
+        XCTAssertEqual(stop.blur, 0.0)
+    }
+
+    /// 「褪色」配方全程不模糊——这是它相对旧行为的核心卖点（文字始终可读）。
+    func testCalmProfileNeverBlurs() {
+        for step in 0...20 {
+            let intensity = Double(step) / 20
+            XCTAssertEqual(
+                AmbienceProfile.calm.sample(at: intensity).blur, 0,
+                "褪色配方在强度 \(intensity) 处出现了模糊"
+            )
+        }
+    }
+
+    /// spec 的"饱和度 ↓70%"= 保留 30%。
+    func testCalmProfileMatchesSpecSaturationAtModerate() {
+        let stop = AmbienceProfile.calm.sample(at: FrictionLevel.moderate.blurIntensity)
+        XCTAssertEqual(stop.saturation, 0.30, accuracy: 0.001)
+    }
+
+    /// 强度越高，褪色越深、暗角越重——不能出现回头。
+    func testCalmProfileIsMonotonic() {
+        var previousSaturation = 2.0
+        var previousVignette = -1.0
+        for step in 0...20 {
+            let stop = AmbienceProfile.calm.sample(at: Double(step) / 20)
+            XCTAssertLessThanOrEqual(stop.saturation, previousSaturation + 0.0001, "饱和度不该回升")
+            XCTAssertGreaterThanOrEqual(stop.vignette, previousVignette - 0.0001, "暗角不该变浅")
+            previousSaturation = stop.saturation
+            previousVignette = stop.vignette
+        }
+    }
+
+    /// 红区传的是 0.5，落在 0.4 与 0.8 两个控制点之间，必须插值出中间值而不是跳档。
+    func testInterpolatesBetweenStops() {
+        let stop = AmbienceProfile.calm.sample(at: 0.6)
+        XCTAssertGreaterThan(stop.saturation, 0.20)
+        XCTAssertLessThan(stop.saturation, 0.30)
+        XCTAssertGreaterThan(stop.vignette, 0.45)
+        XCTAssertLessThan(stop.vignette, 0.70)
+    }
+
+    /// 超出范围与退化输入不能炸。
+    func testClampsOutOfRangeIntensity() {
+        XCTAssertEqual(AmbienceProfile.calm.sample(at: -5).saturation, 1.0)
+        XCTAssertEqual(AmbienceProfile.calm.sample(at: 99).saturation, 0.20)
+        let empty = AmbienceProfile(id: "x", nameKey: "n", detailKey: "d", stops: [])
+        XCTAssertEqual(empty.sample(at: 0.5).saturation, 1.0, "空配方应退化成「什么都不做」")
+    }
+
+    /// 「压暗」不动颜色；「起雾」保持 0.1.x 的老曲线。
+    func testOtherProfilesKeepTheirContract() {
+        for step in 0...10 {
+            XCTAssertEqual(AmbienceProfile.dim.sample(at: Double(step) / 10).saturation, 1.0,
+                           "压暗配方不该改变颜色")
+        }
+        XCTAssertEqual(AmbienceProfile.fog.sample(at: 0.8).blur, 0.8, accuracy: 0.001)
+        XCTAssertEqual(AmbienceProfile.fog.sample(at: 0.8).saturation, 1.0)
+    }
+
+    /// 配方 id 必须唯一且可按 id 找回（氛围包要靠 id 挂进来）。
+    func testBuiltInProfilesAreAddressableById() {
+        let ids = AmbienceProfile.builtIn.map(\.id)
+        XCTAssertEqual(Set(ids).count, ids.count, "配方 id 不能重复")
+        for id in ids {
+            XCTAssertEqual(AmbienceProfile.builtIn(id: id)?.id, id)
+        }
+        XCTAssertNil(AmbienceProfile.builtIn(id: "nope"))
+    }
+}

@@ -13,6 +13,12 @@
 "alert.weekly_suggestion.body" = "%1$@\n\nWhy: %2$@";
 "alert.weekly_suggestion.skip" = "Not This Week";
 "alert.weekly_suggestion.title" = "This week's suggestion";
+"ambience.calm.detail" = "The world slowly loses its colour and the edges close in. Nothing is blurred, so everything stays readable.";
+"ambience.calm.name" = "Fade";
+"ambience.dim.detail" = "Only the edges darken. Colour is untouched — the most restrained option.";
+"ambience.dim.name" = "Dim";
+"ambience.fog.detail" = "The original full-screen blur. The most forceful, and the only one that makes text hard to read.";
+"ambience.fog.name" = "Fog";
 "apprule.empty_hint" = "No apps yet — pick some from “Running apps” below, or add the current one from the menu bar.";
 "apprule.remove_accessibility" = "Remove %1$@";
 "apprule.zone_green" = "Green";
@@ -178,6 +184,9 @@
 "settings.about.report_issue" = "Report an Issue";
 "settings.about.tagline" = "A lookout on the mast";
 "settings.about.version" = "Version %1$@";
+"settings.ambience.note" = "What the screen does while you have drifted away. Text stays readable in every profile except Fog.";
+"settings.ambience.preview" = "Preview";
+"settings.ambience.section" = "Drift Ambience";
 "settings.friction.accessibility_note" = "Accessibility comes first: every friction effect can be switched off right here.";
 "settings.friction.accessibility_section" = "Accessibility";
 "settings.friction.blur" = "Gradually blur the screen while you drift (friction fog)";

@@ -40,7 +40,7 @@ final class AppCoordinator {
     // MARK: - UI / effects
 
     let island = IslandController()
-    private let fog = FrictionFogController()
+    private let fog = AmbienceRenderer()
     private let inputFriction = InputFriction()
     private let hotkeys = HotkeyMonitor()
     private var recapWindow: RecapWindowController?
@@ -77,6 +77,8 @@ final class AppCoordinator {
             self?.rebuildReducer(for: preset)
         }
 
+        fog.profile = AmbienceProfile.builtIn(id: defaults.string(forKey: SettingsKey.ambienceProfile) ?? "")
+            ?? .calm
         configureUICallbacks()
         recoverCrashedSessionIfAny()
         pruneOldDataIfNeeded()
@@ -666,6 +668,26 @@ final class AppCoordinator {
                 NSLog("[Anchor] pruned %d rows older than %d days", removed, days)
             }
         }
+    }
+
+    // MARK: - 氛围配方（Settings「摩擦」调用）
+
+    /// 切换漂移氛围，并立刻按当前状态重绘。
+    func setAmbience(_ profile: AmbienceProfile) {
+        defaults.set(profile.id, forKey: SettingsKey.ambienceProfile)
+        fog.profile = profile
+        // 正在漂移的话立刻换装，不用等下一个 tick。
+        if case let .drifting(elapsed, _) = state {
+            applyFriction(level: FrictionLevel.forElapsed(elapsed, threshold: reducer.driftThreshold).blurIntensity)
+        } else if isRed(state) {
+            applyFriction(level: 0.5)
+        }
+    }
+
+    /// 在设置里当场预览某个配方——氛围这种东西没法靠文字判断。
+    /// 按"漂了 2 分钟"的档位渲染 3 秒后自动恢复。
+    func previewAmbience(_ profile: AmbienceProfile) {
+        fog.preview(profile: profile, intensity: FrictionLevel.moderate.blurIntensity, seconds: 3)
     }
 
     // MARK: - 数据导出 / 清除（Settings「隐私与数据」调用）

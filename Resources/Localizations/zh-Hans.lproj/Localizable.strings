@@ -13,6 +13,12 @@
 "alert.weekly_suggestion.body" = "%1$@\n\n依据：%2$@";
 "alert.weekly_suggestion.skip" = "这周先不用";
 "alert.weekly_suggestion.title" = "本周建议";
+"ambience.calm.detail" = "世界慢慢失去颜色，四周向内收拢。全程不模糊，所以什么都还看得清。";
+"ambience.calm.name" = "褪色";
+"ambience.dim.detail" = "只压暗四周，完全不动颜色。最克制的一种。";
+"ambience.dim.name" = "压暗";
+"ambience.fog.detail" = "0.1.x 的全屏模糊。最强硬，也是唯一会让文字变得难读的一种。";
+"ambience.fog.name" = "起雾";
 "apprule.empty_hint" = "还没有应用——从下方「正在运行的应用」点选，或用菜单栏一键收编。";
 "apprule.remove_accessibility" = "移除 %1$@";
 "apprule.zone_green" = "绿";
@@ -178,6 +184,9 @@
 "settings.about.report_issue" = "反馈问题";
 "settings.about.tagline" = "桅杆上的瞭望员";
 "settings.about.version" = "版本 %1$@";
+"settings.ambience.note" = "漂走之后屏幕会发生什么。除「起雾」外，其余配方都不影响文字的可读性。";
+"settings.ambience.preview" = "预览";
+"settings.ambience.section" = "漂移氛围";
 "settings.friction.accessibility_note" = "无障碍是底线：所有摩擦干预都能在这里一键关掉。";
 "settings.friction.accessibility_section" = "无障碍";
 "settings.friction.blur" = "漂移时屏幕渐进模糊（摩擦雾）";

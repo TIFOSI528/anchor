@@ -12,7 +12,7 @@ struct SettingsView: View {
                 .tabItem { Label(L("settings.tab.general"), systemImage: "gearshape") }
             PresetsSettingsView(library: library, coordinator: coordinator)
                 .tabItem { Label(L("settings.tab.presets"), systemImage: "list.bullet.rectangle") }
-            FrictionSettingsView()
+            FrictionSettingsView(coordinator: coordinator)
                 .tabItem { Label(L("settings.tab.friction"), systemImage: "drop") }
             PrivacySettingsView(coordinator: coordinator)
                 .tabItem { Label(L("settings.tab.privacy"), systemImage: "lock.shield") }
@@ -292,13 +292,26 @@ struct PresetEditor: View {
 // MARK: - Friction
 
 struct FrictionSettingsView: View {
+    weak var coordinator: AppCoordinator?
+
     @AppStorage(SettingsKey.frictionEnabled) private var frictionEnabled = true
     @AppStorage(SettingsKey.seriousMode) private var seriousMode = false
     @AppStorage(SettingsKey.reduceFriction) private var reduceFriction = false
     @AppStorage(SettingsKey.inputFrictionEnabled) private var inputFriction = false
+    @AppStorage(SettingsKey.ambienceProfile) private var ambienceId = AmbienceProfile.calm.id
 
     var body: some View {
         Form {
+            // 氛围排在最前：它是漂移时用户唯一会看到的东西。
+            Section(L("settings.ambience.section")) {
+                ForEach(AmbienceProfile.builtIn) { profile in
+                    ambienceRow(profile)
+                }
+                Text(L("settings.ambience.note"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 Toggle(L("settings.friction.blur"), isOn: $frictionEnabled)
                 Toggle(L("settings.friction.serious_mode"), isOn: $seriousMode)
@@ -311,6 +324,9 @@ struct FrictionSettingsView: View {
                 Text(L("settings.friction.scroll_lock_note"))
             }
             Section(L("settings.friction.accessibility_section")) {
+                // 这里刻意不加"氛围"相关的开关：无障碍的底线是"能一键全关"，
+                // 换配方不是无障碍手段。
+
                 Toggle(L("settings.friction.reduce_motion"), isOn: $reduceFriction)
                 Text(L("settings.friction.accessibility_note"))
                     .font(.footnote)
@@ -318,6 +334,36 @@ struct FrictionSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+extension FrictionSettingsView {
+
+    /// 一行 = 一套氛围。带「预览」按钮：氛围没法靠文字判断，必须能当场看一眼。
+    fileprivate func ambienceRow(_ profile: AmbienceProfile) -> some View {
+        let isActive = profile.id == ambienceId
+        return HStack(alignment: .top, spacing: 8) {
+            Image(systemName: isActive ? "largecircle.fill.circle" : "circle")
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(L(profile.nameKey)).font(.callout.weight(.semibold))
+                Text(L(profile.detailKey))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Button(L("settings.ambience.preview")) {
+                coordinator?.previewAmbience(profile)
+            }
+            .controlSize(.small)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            ambienceId = profile.id
+            coordinator?.setAmbience(profile)
+        }
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }
 }
 
@@ -455,6 +501,8 @@ enum SettingsKey {
     static let lastSuggestion = "anchor.lastSuggestion"
     /// 历史数据留存天数；0 = 永久保留。
     static let retentionDays = "anchor.retentionDays"
+    /// 漂移氛围配方 id（见 AmbienceProfile）。
+    static let ambienceProfile = "anchor.ambienceProfile"
     /// Sparkle 读这个标准键决定是否自动检查。
     static let autoUpdateEnabled = "SUEnableAutomaticChecks"
 }

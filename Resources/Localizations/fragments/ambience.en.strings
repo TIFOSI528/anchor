@@ -1,0 +1,13 @@
+/* Drift ambience profiles. These are what the user actually sees while drifting,
+   so the copy has to convey feel, not mechanism. */
+
+"settings.ambience.section" = "Drift Ambience";
+"settings.ambience.note" = "What the screen does while you have drifted away. Text stays readable in every profile except Fog.";
+"settings.ambience.preview" = "Preview";
+
+"ambience.calm.name" = "Fade";
+"ambience.calm.detail" = "The world slowly loses its colour and the edges close in. Nothing is blurred, so everything stays readable.";
+"ambience.dim.name" = "Dim";
+"ambience.dim.detail" = "Only the edges darken. Colour is untouched — the most restrained option.";
+"ambience.fog.name" = "Fog";
+"ambience.fog.detail" = "The original full-screen blur. The most forceful, and the only one that makes text hard to read.";

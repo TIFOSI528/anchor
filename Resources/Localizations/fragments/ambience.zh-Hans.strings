@@ -1,0 +1,12 @@
+/* 漂移氛围配方。这是用户漂走时唯一会看到的东西，文案要传达"感觉"而不是"机制"。 */
+
+"settings.ambience.section" = "漂移氛围";
+"settings.ambience.note" = "漂走之后屏幕会发生什么。除「起雾」外，其余配方都不影响文字的可读性。";
+"settings.ambience.preview" = "预览";
+
+"ambience.calm.name" = "褪色";
+"ambience.calm.detail" = "世界慢慢失去颜色，四周向内收拢。全程不模糊，所以什么都还看得清。";
+"ambience.dim.name" = "压暗";
+"ambience.dim.detail" = "只压暗四周，完全不动颜色。最克制的一种。";
+"ambience.fog.name" = "起雾";
+"ambience.fog.detail" = "0.1.x 的全屏模糊。最强硬，也是唯一会让文字变得难读的一种。";
