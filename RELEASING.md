@@ -43,7 +43,28 @@ export ANCHOR_APPCAST_URL="https://raw.githubusercontent.com/TIFOSI528/anchor/ma
 # export ANCHOR_APPLE_ID=... ANCHOR_APPLE_PWD=... ANCHOR_TEAM_ID=...
 ```
 
-## 一、每次发版（本地，~10 分钟）
+## 一、每次发版
+
+```bash
+zsh scripts/release.sh 0.2.0        # 演练：只跑只读检查并打印计划
+zsh scripts/release.sh 0.2.0 --go   # 真的发
+```
+
+脚本把下面「手工步骤」整条串起来了，并且加了三道以前只靠人记得的关卡：
+
+- **公证没验过绝不推 tag**。推 tag 会触发 `release.yml`，而它上传的是 ad-hoc 签名的
+  同名 dmg——先推 tag 再发现公证失败，Release 上就已经挂了一个被 Gatekeeper 拦死的包。
+- **等 CI 跑完后把已发布的资产下载回来复验**，被 CI 覆盖就自动重传（见下方注意事项）。
+- **appcast 的 `length` 对着「已发布」的资产算**，并与本地文件逐字节比对。不一致时
+  Sparkle 是**静默**拒绝更新，是最难查的一类故障。
+
+中断了可以 `--resume` 续跑（已完成的阶段会跳过，不会重复推送或重复打 tag）。
+
+公证 profile 名脚本会自动探测（依次试 `dev`、`anchor-notary`），也可以自己
+`export ANCHOR_NOTARY_PROFILE=...` 覆盖。
+
+<details>
+<summary>手工步骤（脚本坏了或想逐步来时用）</summary>
 
 ```bash
 # 0. 确认绿
@@ -68,8 +89,13 @@ git tag v0.1.0 && git push origin v0.1.0
 # 也可手动：gh release create v0.1.0 output/Anchor-0.1.0.dmg
 ```
 
-> 注意：CI 里的 dmg 是 **ad-hoc 签名**（无证书 secrets 时）。对外发布请用上面本地
-> 签名+公证的 dmg 替换 Release 资产，或在 repo secrets 配好证书后启用 CI 签名。
+</details>
+
+> **注意（最容易踩的一个坑）**：CI 里的 dmg 是 **ad-hoc 签名**（无证书 secrets 时），
+> 而 `release.yml` 用的是同一个文件名。它可能把你刚上传的公证版**覆盖掉**，
+> 于是 Release 页面看着有资产、下载下来却被 Gatekeeper 拦。
+> `scripts/release.sh` 第 7 步就是为此存在的：等 CI 结束 → 把资产下回来 `spctl` 复验 →
+> 被覆盖则重新上传。手工发版时务必自己做这一步，别只看 Release 页面有文件就以为好了。
 
 ## 二、发版检查单
 
