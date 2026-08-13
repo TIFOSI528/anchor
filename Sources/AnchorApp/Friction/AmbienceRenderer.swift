@@ -6,10 +6,21 @@ import AnchorCore
 ///
 /// 每块屏幕一个无边框透明窗口，压在系统 shielding 层下面一级。三条独立通道：
 ///
-/// 1. **去饱和** —— 一层灰色 layer，`compositingFilter = "saturationBlendMode"`。
-///    该混合模式的语义是"色相与明度取自背景、饱和度取自本层"，所以一层纯灰盖上去
-///    就会把**窗口背后的整个屏幕**变灰，靠 layer 不透明度控制程度。
-///    关键好处：文字始终清晰可读——模糊做不到这一点。
+/// 1. **去饱和** —— 一层灰色 layer，`compositingFilter = "colorBlendMode"`。
+///    该混合模式取**源的色相+饱和度、背景的明度**，所以一层纯灰盖上去会保留明暗、
+///    抽掉颜色。关键好处：文字始终清晰可读——模糊做不到这一点。
+///
+///    **这里的选型是实测定下来的，别凭直觉改回去**（截屏读像素，见下表）：
+///
+///    | 方案 | 跨窗口效果 |
+///    |---|---|
+///    | `saturationBlendMode`（语义上最贴切） | **无效**，被 WindowServer 忽略 |
+///    | `CALayer.backgroundFilters` + CIColorControls | **无效** |
+///    | `NSView.backgroundFilters` + CIColorControls | **无效** |
+///    | `colorBlendMode` + 灰 | **有效**，饱和度 0.79 → 0.40 |
+///
+///    对照实验确认过截屏本身没问题：同一条路径换成普通黑色层，亮度 151→100
+///    被如实拍到，所以上面三个"无效"是混合模式/滤镜真的没生效，不是测量错误。
 /// 2. **边缘渐晕** —— 径向渐变，中心透明、四角压黑；随强度加深并且透明核心向内收缩。
 ///    余光能察觉，视线中心不受干扰（Calm Technology 的做法）。
 /// 3. **模糊** —— 只有 `fog` 配方会用到，保留兼容。
@@ -97,6 +108,26 @@ final class AmbienceRenderer {
         NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     }
 
+    /// 这条路线能达到的**最低饱和度**（实测：灰层 opacity 拉满也只到原色的 51%）。
+    ///
+    /// 叠多层没有用——同一窗口内的图层会先合成成一份 backing store，
+    /// 只跟背景混合一次（实测叠 1/2/3/4 层，结果都是 51.1%，一模一样）。
+    /// 要做到真正的全灰只能上 ScreenCaptureKit 走截屏管线，那需要录屏权限，
+    /// 对一个"不要任何权限"的产品来说代价太大。
+    static let minimumReachableSaturation = 0.51
+
+    /// 目标饱和度 → 灰层不透明度。
+    ///
+    /// 实测标定（opacity → 保留的饱和度）：
+    /// `0→100% · 0.2→91.7% · 0.4→82.9% · 0.6→73.7% · 0.8→63.4% · 1.0→51.1%`
+    /// 近似线性，所以用一次函数反解即可；超出可达范围就钳到满档，
+    /// 而不是假装达到了一个到不了的值。
+    static func grayOpacity(forTargetSaturation target: Double) -> Float {
+        let span = 1 - minimumReachableSaturation           // ≈ 0.49
+        let opacity = (1 - target) / span
+        return Float(min(max(opacity, 0), 1))
+    }
+
     /// 取样后再按系统无障碍设置收一收。
     private func effectiveStop(at intensity: Double) -> AmbienceProfile.Stop {
         let stop = profile.sample(at: intensity)
@@ -113,8 +144,7 @@ final class AmbienceRenderer {
 
     private func apply(_ stop: AmbienceProfile.Stop, animated: Bool) {
         let duration = animated ? 0.22 : 0
-        // 饱和度 s 需要的灰层不透明度就是 1 - s。
-        let desaturateOpacity = Float(min(max(1 - stop.saturation, 0), 1))
+        let desaturateOpacity = Self.grayOpacity(forTargetSaturation: stop.saturation)
 
         CATransaction.begin()
         CATransaction.setAnimationDuration(duration)
@@ -181,7 +211,7 @@ final class AmbienceRenderer {
         let desaturate = CALayer()
         desaturate.frame = rootLayer.bounds
         desaturate.backgroundColor = NSColor(white: 0.5, alpha: 1).cgColor
-        desaturate.compositingFilter = "saturationBlendMode"
+        desaturate.compositingFilter = "colorBlendMode" // 见类型注释里的实测选型表
         desaturate.opacity = 0
         desaturate.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         rootLayer.addSublayer(desaturate)

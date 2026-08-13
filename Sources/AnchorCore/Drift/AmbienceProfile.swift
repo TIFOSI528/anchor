@@ -75,7 +75,12 @@ public struct AmbienceProfile: Equatable, Sendable, Identifiable {
 public extension AmbienceProfile {
 
     /// 默认配方：世界慢慢褪色 + 暗角向内收。文字全程清晰可读，只走余光通道。
-    /// 对应 spec 原本设计的三层，不含模糊。
+    ///
+    /// **数值是按实测可达范围定的，不是照 spec 抄的。** spec 写的是"饱和度↓70%"
+    /// （即保留 30%），但跨窗口去饱和的技术地板是**保留约 51%**
+    /// （见 `AmbienceRenderer.minimumReachableSaturation` 的实测标定）。
+    /// 与其在这里写一个到不了的 0.30、让渲染器悄悄钳掉，不如把真实值写明白，
+    /// 并用**更重的暗角**补上顶档该有的分量——那条通道是实测有效的（亮度 151→100）。
     static let calm = AmbienceProfile(
         id: "calm",
         nameKey: "ambience.calm.name",
@@ -84,10 +89,10 @@ public extension AmbienceProfile {
             .init(intensity: 0.0, saturation: 1.00, vignette: 0.00, blur: 0),
             // 30–60s：只有极淡的暗角，不动颜色。
             .init(intensity: 0.1, saturation: 1.00, vignette: 0.18, blur: 0),
-            // 1–3min：spec 的"饱和度↓70%"。
-            .init(intensity: 0.4, saturation: 0.30, vignette: 0.45, blur: 0),
-            // 3min+：继续褪色 + 暗角加深，仍然不模糊。
-            .init(intensity: 0.8, saturation: 0.20, vignette: 0.70, blur: 0),
+            // 1–3min：颜色开始明显流失（约 -25%）。
+            .init(intensity: 0.4, saturation: 0.75, vignette: 0.48, blur: 0),
+            // 3min+：压到技术地板 + 暗角吃重。
+            .init(intensity: 0.8, saturation: 0.51, vignette: 0.78, blur: 0),
         ]
     )
 

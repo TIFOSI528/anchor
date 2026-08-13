@@ -576,10 +576,20 @@ final class AmbienceProfileTests: XCTestCase {
         }
     }
 
-    /// spec 的"饱和度 ↓70%"= 保留 30%。
-    func testCalmProfileMatchesSpecSaturationAtModerate() {
-        let stop = AmbienceProfile.calm.sample(at: FrictionLevel.moderate.blurIntensity)
-        XCTAssertEqual(stop.saturation, 0.30, accuracy: 0.001)
+    /// 1–3min 档必须有明显的颜色流失（spec 的意图），但数值要落在**实测可达范围**内。
+    ///
+    /// spec 原文是"饱和度↓70%"（保留 30%），可跨窗口去饱和的技术地板是保留约 51%
+    /// （见 AmbienceRenderer.minimumReachableSaturation）。写一个到不了的数字然后让
+    /// 渲染器悄悄钳掉，就又变成"存下来却名不副实"的那类问题了。
+    func testCalmProfileDesaturatesWithinReachableRange() {
+        let moderate = AmbienceProfile.calm.sample(at: FrictionLevel.moderate.blurIntensity)
+        XCTAssertLessThan(moderate.saturation, 0.85, "1–3min 档应该已经明显掉色")
+        XCTAssertGreaterThanOrEqual(moderate.saturation, 0.51, "不能写一个到不了的目标值")
+
+        let heavy = AmbienceProfile.calm.sample(at: FrictionLevel.heavy.blurIntensity)
+        XCTAssertEqual(heavy.saturation, 0.51, accuracy: 0.001, "顶档就压到技术地板")
+        // 去饱和有上限，所以顶档要靠暗角把分量补回来。
+        XCTAssertGreaterThan(heavy.vignette, 0.7, "顶档暗角必须吃重")
     }
 
     /// 强度越高，褪色越深、暗角越重——不能出现回头。
@@ -595,19 +605,27 @@ final class AmbienceProfileTests: XCTestCase {
         }
     }
 
-    /// 红区传的是 0.5，落在 0.4 与 0.8 两个控制点之间，必须插值出中间值而不是跳档。
+    /// 红区传的是 0.5，落在两个控制点之间，必须插值出中间值而不是跳档。
+    /// 期望值从 profile 自己的控制点推导——写死数字的话，以后微调曲线就会假失败。
     func testInterpolatesBetweenStops() {
-        let stop = AmbienceProfile.calm.sample(at: 0.6)
-        XCTAssertGreaterThan(stop.saturation, 0.20)
-        XCTAssertLessThan(stop.saturation, 0.30)
-        XCTAssertGreaterThan(stop.vignette, 0.45)
-        XCTAssertLessThan(stop.vignette, 0.70)
+        let profile = AmbienceProfile.calm
+        let lower = profile.stops[2] // intensity 0.4
+        let upper = profile.stops[3] // intensity 0.8
+        let mid = profile.sample(at: (lower.intensity + upper.intensity) / 2)
+
+        XCTAssertLessThan(mid.saturation, lower.saturation, "应比下界更褪色")
+        XCTAssertGreaterThan(mid.saturation, upper.saturation, "但还没到上界那么褪")
+        XCTAssertGreaterThan(mid.vignette, lower.vignette)
+        XCTAssertLessThan(mid.vignette, upper.vignette)
+        // 线性插值：正中间应该正好是两端的平均值。
+        XCTAssertEqual(mid.saturation, (lower.saturation + upper.saturation) / 2, accuracy: 0.001)
     }
 
     /// 超出范围与退化输入不能炸。
     func testClampsOutOfRangeIntensity() {
-        XCTAssertEqual(AmbienceProfile.calm.sample(at: -5).saturation, 1.0)
-        XCTAssertEqual(AmbienceProfile.calm.sample(at: 99).saturation, 0.20)
+        let profile = AmbienceProfile.calm
+        XCTAssertEqual(profile.sample(at: -5).saturation, profile.stops.first!.saturation)
+        XCTAssertEqual(profile.sample(at: 99).saturation, profile.stops.last!.saturation)
         let empty = AmbienceProfile(id: "x", nameKey: "n", detailKey: "d", stops: [])
         XCTAssertEqual(empty.sample(at: 0.5).saturation, 1.0, "空配方应退化成「什么都不做」")
     }
